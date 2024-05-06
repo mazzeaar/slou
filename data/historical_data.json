@@ -1,0 +1,38 @@
+{
+    "generateMoves": {
+        "n_calls": 1474176,
+        "total_duration": 38275972
+    },
+    "generate_attacks": {
+        "n_calls": 17229786,
+        "total_duration": 307416532
+    },
+    "generate_moves": {
+        "n_calls": 37316,
+        "total_duration": 256413768
+    },
+    "king": {
+        "n_calls": 491392,
+        "total_duration": 8350373
+    },
+    "knight": {
+        "n_calls": 2271279,
+        "total_duration": 38526375
+    },
+    "move": {
+        "n_calls": 35525300,
+        "total_duration": 776728349
+    },
+    "pawn": {
+        "n_calls": 37316,
+        "total_duration": 666796
+    },
+    "pseudolegal_moves": {
+        "n_calls": 543570,
+        "total_duration": 286071084
+    },
+    "undo": {
+        "n_calls": 35525300,
+        "total_duration": 592612716
+    }
+}
