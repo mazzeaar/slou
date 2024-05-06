@@ -5,6 +5,8 @@ Its slow, has no UCI (yet) and has some bugs.
 
 Move generation almost works bug free. All [perft tests](https://www.chessprogramming.org/Perft_Results) run perfectly until perft 5, but some bugs emerge if i go deeper.
 
+As of now the engine generates around $3000000$ moves per seconds, altough evaluation is not yet implemented.
+
 ## Usage
 ### First build
 
