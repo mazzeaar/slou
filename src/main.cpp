@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
             tests.runTests();
         }
 
-        if ( strcmp(argv[1], "--position") == 0 ) {
+        if ( strcmp(argv[1], "--speedtest") == 0 ) {
             std::string fen = argv[2];
             fen = fen.substr(1, fen.size() - 2);
             std::string n = argv[3];
