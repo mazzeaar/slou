@@ -8,35 +8,6 @@
 
 #include "definitions.h"
 
-enum MoveFlagMasks {
-    SPECIAL_0 = 1U,
-    SPECIAL_1 = 2U,
-    CAPTURE_MASK = 4U,
-    PROMOTION_MASK = 8U
-};
-
-/*
-quiet           = 0000,
-push            = 0001,
-kcastle         = 0010,
-qcastle         = 0011,
-capture         = 0100,
-ep              = 0101,
-
-k_promo         = 1000,
-b_promo         = 1001,
-r_promo         = 1010,
-q_promo         = 1011,
-
-k_promo_cap     = 1100,
-b_promo_cap     = 1101,
-r_promo_cap     = 1110,
-q_promo_cap     = 1111
-
-promo_mask =    1000
-capture_mask =  0100
-*/
-
 enum class MoveFlag : uint8_t {
     QUIET_MOVE = 0b0000,
     DOUBLE_PAWN_PUSH = 0b0001,
@@ -106,6 +77,9 @@ public:
     {
         return Move((flag << FLAG_SHIFT) | (from << FROM_SHIFT) | (to));
     }
+
+    bool operator==(const Move& other) const { return other.raw == raw; }
+    bool operator!=(const Move& other) const { return other.raw != raw; }
 
     constexpr inline uint8_t getFrom() const { return ((raw & FROM_MASK) >> FROM_SHIFT); }
     constexpr inline uint8_t getTo() const { return ((raw & TO_MASK) >> TO_SHIFT); }

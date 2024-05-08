@@ -84,6 +84,17 @@ namespace type {
         "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
     };
 
+    constexpr int coordinateToIndex(const std::string& str)
+    {
+        for ( int i = 0; i < 64; ++i ) {
+            if ( square_to_coordinates[i] == str ) {
+                return i;
+            }
+        }
+
+        return 65;
+    }
+
     constexpr Color pieceColor(Piece piece)
     {
         if ( piece >= Piece::P && piece <= Piece::K ) {

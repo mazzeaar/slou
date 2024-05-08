@@ -68,7 +68,7 @@ public:
     void undo(const Move& move);
 
     std::string toString() const;
-    std::string toPrettyString(bool colored = false, bool emoji = false) const;
+    std::string toPrettyString(bool colored = false, bool emoji = true) const;
 
 private:
 

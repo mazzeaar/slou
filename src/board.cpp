@@ -285,7 +285,7 @@ std::string Board::toPrettyString(bool colored, bool emoji) const
 
     bool white_cell = true;
     int rank = 8;
-    for ( unsigned i = 0; i < mailbox.size(); ++i ) {
+    for ( int i = mailbox.size() - 1; i >= 0; --i ) {
         const auto& row = mailbox[i];
         str += BORDER;
         str += std::to_string(rank) + " " + VERTICAL_BORDER;
@@ -309,16 +309,19 @@ std::string Board::toPrettyString(bool colored, bool emoji) const
 
 
         switch ( i ) {
-            case 0: {
-                str += "Position: ";
+            case 7: {
+                str += "Position: " + getFen();
             } break;
-            case 1: {
+            case 6: {
                 str += "Turn: ";
                 str += (type::isWhite(cur_color)) ? "white" : "black";
             } break;
-            case 2: {
-
+            case 5: {
+                str += "Eval: TODO";
             } break;
+            case 4: {
+                str += "HMC/FMC: TODO";
+            }
         }
 
         str += "\n";
@@ -370,6 +373,21 @@ std::vector<std::vector<std::string>> Board::toStringMailbox(bool emoji) const
 void Board::move(const Move& move)
 {
     DEBUG_START;
+
+    if ( move == Move() ) {
+        return;
+    }
+
+    if ( whiteTurn() ) {
+        if ( getColorFromSquare(move.getFrom()) != type::Color::white ) {
+            return;
+        }
+    }
+    else {
+        if ( getColorFromSquare(move.getFrom()) != type::Color::black ) {
+            return;
+        }
+    }
 
     storeState(move);
 
