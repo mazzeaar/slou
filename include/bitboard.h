@@ -74,7 +74,7 @@ inline u64 extract_next_bit(u64& bb)
     return lsb;
 }
 
-inline int pop_LSB(u64& b)
+inline constexpr int pop_LSB(u64& b)
 {
     int i = get_LSB(b);
     b &= b - 1;

@@ -6,30 +6,32 @@
 #include <string>
 #include <array>
 
-namespace type {
-    enum class Color {
-        white, black, none
-    };
+#define BIT_LOOP(X) for (; X != 0ULL ; X &= X - 1)
 
-    enum class PieceType {
-        pawn, knight, bishop, rook, queen, king, none
-    };
+enum class Color {
+    white, black, none
+};
 
-    enum class Piece {
-        P, N, B, R, Q, K,
-        p, n, b, r, q, k,
-        none
-    };
+enum class PieceType {
+    pawn, knight, bishop, rook, queen, king, none
+};
 
-    constexpr uint8_t isBishop(PieceType type) { return type == PieceType::bishop; }
-    constexpr uint8_t isRook(PieceType type) { return type == PieceType::rook; }
-    constexpr uint8_t isQueen(PieceType type) { return type == PieceType::queen; }
+enum class Piece {
+    P, N, B, R, Q, K,
+    p, n, b, r, q, k,
+    none
+};
 
-    constexpr uint8_t toByte(Piece piece) { return static_cast<uint8_t>(piece); }
-    constexpr uint8_t toByte(PieceType type) { return static_cast<uint8_t>(type); }
-    constexpr uint8_t toByte(Color color) { return static_cast<uint8_t>(color); }
+namespace utils {
+    inline constexpr uint8_t isBishop(PieceType type) { return type == PieceType::bishop; }
+    inline constexpr uint8_t isRook(PieceType type) { return type == PieceType::rook; }
+    inline constexpr uint8_t isQueen(PieceType type) { return type == PieceType::queen; }
 
-    constexpr Color getColor(Piece piece)
+    inline constexpr uint8_t toByte(Piece piece) { return static_cast<uint8_t>(piece); }
+    inline constexpr uint8_t toByte(PieceType type) { return static_cast<uint8_t>(type); }
+    inline constexpr uint8_t toByte(Color color) { return static_cast<uint8_t>(color); }
+
+    inline constexpr Color getColor(Piece piece)
     {
         switch ( piece ) {
             case Piece::p: case Piece::n: case Piece::b: case Piece::r: case Piece::q: case Piece::k:
@@ -41,7 +43,7 @@ namespace type {
         }
     }
 
-    constexpr Color switchColor(Color color)
+    inline constexpr Color switchColor(Color color)
     {
         if ( color == Color::none ) {
             return Color::none;
@@ -51,7 +53,20 @@ namespace type {
         }
     }
 
-    constexpr Piece switchColor(Piece piece)
+    inline constexpr Color operator!(Color color)
+    {
+        if ( color == Color::none ) {
+            return Color::none;
+        }
+        else if ( color == Color::white ) {
+            return Color::black;
+        }
+        else {
+            return Color::white;
+        }
+    }
+
+    inline constexpr Piece switchColor(Piece piece)
     {
         switch ( piece ) {
             case Piece::p: return Piece::P;
@@ -232,4 +247,4 @@ namespace type {
         return PieceToChar(getPiece(type, color));
     }
 
-}; // namespace type
+}; // namespace utils

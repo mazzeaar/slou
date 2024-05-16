@@ -1,160 +1,206 @@
 #include "leapers.h"
 #include "debug.h"
 
-inline void leapers::addMoves(MoveList& move_list, int source_square, u64 moves, MoveFlag flag)
-{
-    while ( moves ) {
-        const int target_square = pop_LSB(moves);
-        move_list.add(Move(source_square, target_square, flag));
-    }
-}
-
 // ================================
 // MOVE GENERATION FUNCTIONS
 // ================================
 
-template <type::Color color>
+template <Color color>
 void leapers::pawn(MoveList& move_list, const Board& board)
 {
-    DEBUG_START;
+    static constexpr int OFFSET_MOVE = (utils::isWhite(color)) ? -8 : 8;
+    static constexpr int OFFSET_PUSH = (utils::isWhite(color)) ? -16 : 16;
+    static constexpr int OFFSET_ATTACK_L = (utils::isWhite(color)) ? -7 : 7;
+    static constexpr int OFFSET_ATTACK_R = (utils::isWhite(color)) ? -9 : 9;
 
-    const u64 occupancy = board.getOccupancy();
-    const u64 enemy = board.getEnemy(color);
-    const u64 ep_field = board.getEpField();
+    static constexpr uint64_t LEFT_FILE = (utils::isWhite(color)) ? FILE_A : FILE_H;
+    static constexpr uint64_t RIGHT_FILE = (utils::isWhite(color)) ? FILE_H : FILE_A;
+    static constexpr uint64_t PROMO_RANK = (utils::isWhite(color)) ? RANK_7 : RANK_2;
+    static constexpr uint64_t PUSH_RANK = (utils::isWhite(color)) ? RANK_2 : RANK_7;
+
+    const uint64_t occupancy = board.getOccupancy();
+    const uint64_t enemy = board.getEnemy(color);
+    const uint64_t ep_field = board.getEpField();
+
+    const uint64_t pawns = board.getPawns(color);
+
+    const uint64_t move_pawns = pawns & ~PROMO_RANK;
+    const uint64_t push_pawns = pawns & PUSH_RANK;
+
+    // filter pawns that can not attack to l/r, this way we dont have to do bit 'teleportation' check
+    const uint64_t attack_pawns_l = pawns & ~PROMO_RANK & ~LEFT_FILE;
+    const uint64_t attack_pawns_r = pawns & ~PROMO_RANK & ~RIGHT_FILE;
+
+    const uint64_t promotable_pawns = pawns & PROMO_RANK;
+    // again, we filter pawns that can not attack to l/r
+    const uint64_t promo_capture_l = promotable_pawns & ~LEFT_FILE;
+    const uint64_t promo_capture_r = promotable_pawns & ~RIGHT_FILE;
 
     if ( get_bit_count(ep_field) > 1 ) {
         LOG_ERROR << "can not have more than 1 piece on the ep_field!\n";
         throw std::runtime_error("can not have more than 1 piece on the ep_field!\n");
     }
 
-    u64 pawns = board.getPawns(color);
 
-    // ignore promo square
-    if constexpr ( type::isWhite(color) ) pawns &= ~RANK_7;
-    else pawns &= ~RANK_2;
-
-    u64 quiet = pawnMove<color>(pawns, occupancy);
-    for ( int target; quiet; quiet &= quiet - 1 ) {
-        target = get_LSB(quiet);
-        if constexpr ( type::isWhite(color) ) {
-            move_list.add(Move::make<MoveFlag::QUIET_MOVE>(target - 8, target));
-        }
-        else {
-            move_list.add(Move::make<MoveFlag::QUIET_MOVE>(target + 8, target));
+    {
+        u64 quiet = pawnMove<color>(move_pawns, occupancy);
+        BIT_LOOP(quiet)
+        {
+            const uint64_t to = get_LSB(quiet);
+            const uint64_t from = to + OFFSET_MOVE;
+            move_list.add(Move::make<Move::Flag::quiet>(from, to));
         }
     }
 
-    u64 push = pawnPush<color>(pawns, occupancy);
-    for ( int target; push; push &= push - 1 ) {
-        target = get_LSB(push);
-        if constexpr ( type::isWhite(color) ) {
-            move_list.add(Move::make<MoveFlag::DOUBLE_PAWN_PUSH>(target - 16, target));
-        }
-        else {
-            move_list.add(Move::make<MoveFlag::DOUBLE_PAWN_PUSH>(target + 16, target));
-        }
-    }
 
-    while ( pawns ) {
-        u64 source = pop_lsb_to_u64(pawns);
-        int source_square = get_LSB(source);
-
-        u64 attack_table;
-        if constexpr ( type::isWhite(color) ) attack_table = white_pawn_attacks[source_square];
-        else attack_table = black_pawn_attacks[source_square];
-
-        u64 attacks = attack_table & enemy;
-        leapers::addMoves(move_list, source_square, attacks, MoveFlag::CAPTURE);
-
-        u64 ep = attack_table & ep_field;
-        leapers::addMoves(move_list, source_square, ep, MoveFlag::EN_PASSANT);
-
-        // u64 quiet = pawnMove<color>(source, occupancy);
-        // leapers::add_moves(move_list, source_square, quiet, MoveFlag::QUIET_MOVE);
-
-        // u64 push = pawnPush<color>(source, occupancy);
-        // leapers::add_moves(move_list, source_square, push, MoveFlag::DOUBLE_PAWN_PUSH);
-    }
-
-    u64 promo_pawns = board.getPawns(color);
-    if constexpr ( type::isWhite(color) ) promo_pawns &= RANK_7;
-    else promo_pawns &= RANK_2;
-
-    while ( promo_pawns ) {
-        u64 source = pop_lsb_to_u64(promo_pawns);
-        int source_square = get_LSB(source);
-
-        u64 attack_table;
-        if ( type::isWhite(color) ) attack_table = white_pawn_attacks[source_square];
-        else attack_table = black_pawn_attacks[source_square];
-
-        u64 promo_captures = attack_table & enemy;
-        while ( promo_captures ) {
-            const int target_square = pop_LSB(promo_captures);
-            move_list.add(Move(source_square, target_square, MoveFlag::KNIGHT_PROMO_CAPTURE));
-            move_list.add(Move(source_square, target_square, MoveFlag::BISHOP_PROMO_CAPTURE));
-            move_list.add(Move(source_square, target_square, MoveFlag::ROOK_PROMO_CAPTURE));
-            move_list.add(Move(source_square, target_square, MoveFlag::QUEEN_PROMO_CAPTURE));
-        }
-
-        u64 promotions = pawnMove<color>(source, occupancy);
-        while ( promotions ) {
-            const int target_square = pop_LSB(promotions);
-            move_list.add(Move(source_square, target_square, MoveFlag::KNIGHT_PROMOTION));
-            move_list.add(Move(source_square, target_square, MoveFlag::BISHOP_PROMOTION));
-            move_list.add(Move(source_square, target_square, MoveFlag::ROOK_PROMOTION));
-            move_list.add(Move(source_square, target_square, MoveFlag::QUEEN_PROMOTION));
+    {
+        u64 push = pawnPush<color>(push_pawns, occupancy);
+        BIT_LOOP(push)
+        {
+            const uint64_t to = get_LSB(push);
+            const uint64_t from = to + OFFSET_PUSH;
+            move_list.add(Move::make<Move::Flag::pawn_push>(from, to));
         }
     }
 
-    DEBUG_END;
+
+    {
+        uint64_t left_ep = pawnAttackLeft<color>(attack_pawns_l, ep_field);
+        BIT_LOOP(left_ep)
+        {
+            const uint64_t to = get_LSB(left_ep);
+            const uint64_t from = to + OFFSET_ATTACK_L;
+            move_list.add(Move::make<Move::Flag::ep>(from, to));
+        }
+
+        uint64_t right_ep = pawnAttackRight<color>(attack_pawns_r, ep_field);
+        BIT_LOOP(right_ep)
+        {
+            const uint64_t to = get_LSB(right_ep);
+            const uint64_t from = to + OFFSET_ATTACK_R;
+            move_list.add(Move::make<Move::Flag::ep>(from, to));
+        }
+    }
+
+
+    {
+        uint64_t left_attacks = pawnAttackLeft<color>(attack_pawns_l, enemy);
+        BIT_LOOP(left_attacks)
+        {
+            const uint64_t to = get_LSB(left_attacks);
+            const uint64_t from = to + OFFSET_ATTACK_L;
+            move_list.add(Move::make<Move::Flag::capture>(from, to));
+        }
+
+        uint64_t right_attacks = pawnAttackRight<color>(attack_pawns_r, enemy);
+        BIT_LOOP(right_attacks)
+        {
+            const uint64_t to = get_LSB(right_attacks);
+            const uint64_t from = to + OFFSET_ATTACK_R;
+            move_list.add(Move::make<Move::Flag::capture>(from, to));
+        }
+    }
+
+
+    {
+        uint64_t quiet_promo = pawnMove<color>(promotable_pawns, occupancy);
+        BIT_LOOP(quiet_promo)
+        {
+            const uint64_t to = get_LSB(quiet_promo);
+            const uint64_t from = to + OFFSET_MOVE;
+
+            move_list.add(Move::make<Move::Flag::promo_n>(from, to));
+            move_list.add(Move::make<Move::Flag::promo_b>(from, to));
+            move_list.add(Move::make<Move::Flag::promo_r>(from, to));
+            move_list.add(Move::make<Move::Flag::promo_q>(from, to));
+        }
+
+        uint64_t capture_left_promo = pawnAttackLeft<color>(promo_capture_l, enemy);
+        BIT_LOOP(capture_left_promo)
+        {
+            const uint64_t to = get_LSB(capture_left_promo);
+            const uint64_t from = to + OFFSET_ATTACK_L;
+
+            move_list.add(Move::make<Move::Flag::promo_x_n>(from, to));
+            move_list.add(Move::make<Move::Flag::promo_x_b>(from, to));
+            move_list.add(Move::make<Move::Flag::promo_x_r>(from, to));
+            move_list.add(Move::make<Move::Flag::promo_x_q>(from, to));
+        }
+
+        uint64_t capture_right_promo = pawnAttackRight<color>(promo_capture_r, enemy);
+        BIT_LOOP(capture_right_promo)
+        {
+            const uint64_t to = get_LSB(capture_right_promo);
+            const uint64_t from = to + OFFSET_ATTACK_R;
+
+            move_list.add(Move::make<Move::Flag::promo_x_n>(from, to));
+            move_list.add(Move::make<Move::Flag::promo_x_b>(from, to));
+            move_list.add(Move::make<Move::Flag::promo_x_r>(from, to));
+            move_list.add(Move::make<Move::Flag::promo_x_q>(from, to));
+        }
+    }
 }
 
-template <type::Color color>
+template <Color color>
 void leapers::knight(MoveList& move_list, const Board& board)
 {
-    DEBUG_START;
-    const u64 occupancy = board.getOccupancy();
-    const u64 enemy = board.getEnemy(color);
+    const uint64_t occupancy = board.getOccupancy();
+    const uint64_t enemy = board.getEnemy(color);
 
-    u64 knights = board.getKnights(color);
-    while ( knights ) {
-        u64 origin_bit = pop_lsb_to_u64(knights);
-        const int from = get_LSB(origin_bit);
+    uint64_t knights = board.getKnights(color);
+    BIT_LOOP(knights)
+    {
+        const uint64_t from = get_LSB(knights);
 
-        u64 move_targets = knight_attacks[from] & ~occupancy;
-        leapers::addMoves(move_list, from, move_targets, MoveFlag::QUIET_MOVE);
+        uint64_t move_targets = knight_attacks[from] & ~occupancy;
+        BIT_LOOP(move_targets)
+        {
+            const uint64_t to = get_LSB(move_targets);
+            move_list.add(Move::make<Move::Flag::quiet>(from, to));
+        }
 
-        u64 attack_targets = knight_attacks[from] & enemy;
-        leapers::addMoves(move_list, from, attack_targets, MoveFlag::CAPTURE);
+        uint64_t attack_targets = knight_attacks[from] & enemy;
+        BIT_LOOP(attack_targets)
+        {
+            const uint64_t to = get_LSB(attack_targets);
+            move_list.add(Move::make<Move::Flag::capture>(from, to));
+        }
     }
-    DEBUG_END;
 }
 
-template <type::Color color>
+template <Color color>
 void leapers::king(MoveList& move_list, const Board& board, u64 enemy_attacks)
 {
-    DEBUG_START;
     const u64 occupancy = board.getOccupancy();
     const u64 enemy = board.getEnemy(color);
 
     u64 king = board.getKing(color);
-    const int source_square = get_LSB(king);
+    const uint64_t from = get_LSB(king);
 
-    u64 moves = king_attacks[source_square] & ~occupancy;
-    leapers::addMoves(move_list, source_square, moves, MoveFlag::QUIET_MOVE);
-
-    u64 attacks = king_attacks[source_square] & enemy;
-    leapers::addMoves(move_list, source_square, attacks, MoveFlag::CAPTURE);
-
-    if ( board.canCastleKs(color, enemy_attacks) ) {
-        move_list.add(Move(source_square, source_square + 2, MoveFlag::KING_CASTLE));
+    u64 moves = king_attacks[from] & ~occupancy & ~enemy_attacks;
+    BIT_LOOP(moves)
+    {
+        const uint64_t to = get_LSB(moves);
+        move_list.add(Move::make<Move::Flag::quiet>(from, to));
     }
 
-    if ( board.canCastleQs(color, enemy_attacks) ) {
-        move_list.add(Move(source_square, source_square - 2, MoveFlag::QUEEN_CASTLE));
+    u64 attacks = king_attacks[from] & enemy;
+    BIT_LOOP(attacks)
+    {
+        const uint64_t to = get_LSB(attacks);
+        move_list.add(Move::make<Move::Flag::capture>(from, to));
     }
-    DEBUG_END;
+
+    // TODO: this can be removed through state template
+    if ( board.canCastle(color) ) {
+        if ( board.canCastleKs(color, enemy_attacks) ) {
+            move_list.add(Move::make<Move::Flag::castle_k>(from, from + 2));
+        }
+
+        if ( board.canCastleQs(color, enemy_attacks) ) {
+            move_list.add(Move::make<Move::Flag::castle_q>(from, from - 2));
+        }
+    }
 }
 
 // ================================
@@ -192,10 +238,10 @@ inline u64 leapers::generateKnightMask(u64 knights)
     return up | down | left | right;
 }
 
-template <type::Color color>
+template <Color color>
 inline u64 leapers::generatePawnMask(u64 pawns)
 {
-    if constexpr ( type::isWhite(color) ) {
+    if constexpr ( utils::isWhite(color) ) {
         const u64 left = north_west(pawns);
         const u64 right = north_east(pawns);
         return (left | right);
@@ -207,10 +253,10 @@ inline u64 leapers::generatePawnMask(u64 pawns)
     }
 }
 
-template <type::Color color>
+template <Color color>
 inline u64 leapers::pawnMove(u64 pawns, u64 occupancy)
 {
-    if constexpr ( type::isWhite(color) ) {
+    if constexpr ( utils::isWhite(color) ) {
         return north(pawns) & ~occupancy;
     }
     else {
@@ -218,10 +264,10 @@ inline u64 leapers::pawnMove(u64 pawns, u64 occupancy)
     }
 }
 
-template <type::Color color>
+template <Color color>
 inline u64 leapers::pawnPush(u64 pawns, u64 occupancy)
 {
-    if constexpr ( type::isWhite(color) ) {
+    if constexpr ( utils::isWhite(color) ) {
         return north(north(pawns & RANK_2) & ~occupancy) & ~occupancy;
     }
     else {
@@ -229,3 +275,24 @@ inline u64 leapers::pawnPush(u64 pawns, u64 occupancy)
     }
 }
 
+template <Color color>
+inline u64 leapers::pawnAttackLeft(u64 pawns, u64 enemy)
+{
+    if constexpr ( utils::isWhite(color) ) {
+        return north_west(pawns) & enemy;
+    }
+    else {
+        return south_east(pawns) & enemy;
+    }
+}
+
+template <Color color>
+inline u64 leapers::pawnAttackRight(u64 pawns, u64 enemy)
+{
+    if constexpr ( utils::isWhite(color) ) {
+        return north_east(pawns) & enemy;
+    }
+    else {
+        return south_west(pawns) & enemy;
+    }
+}

@@ -1,11 +1,12 @@
 #pragma once
 
 #include "bitboard.h"
-#include "board.h"
+#include "board/board.h"
 #include "move.h"
 #include "move_generator/move_generation.h"
 
 #include "zobrist.h"
+#include "ttable.h"
 
 #include <map>
 #include <fstream>
@@ -32,23 +33,21 @@ struct PerftResult {
 
 PerftResult start_perft_test(const std::string& fen, unsigned depth);
 
-template <type::Color color>
-u64 perft_test(Board& board, PerftResult& results, unsigned depth)
+template <Color color>
+u64 perft_test(Board& board, PerftResult& results, unsigned depth /*, TranspositionTable& tt*/)
 {
     if ( depth == 0 ) {
         return 1ULL;
     }
 
-    // u64 hash = Zobrist::computeHash(board);
-    // u64 nodesCount = 0ULL;
-    // if ( Zobrist::has(hash, nodesCount) && depth != 1 ) {
-    //     return nodesCount;
-    // }
+    // uint64_t hash = board.getZobristHash();
 
     u64 nodes = 0ULL;
+    // if ( tt.lookup(hash, nodes) ) { return nodes; }
+
     MoveList move_list;
     generate_moves<color>(move_list, board);
-    //pseudolegal_moves<color>(move_list, board);
+
     if ( move_list.size() == 0 ) {
         results.add_checkmate();
         return 0ULL;
@@ -59,11 +58,11 @@ u64 perft_test(Board& board, PerftResult& results, unsigned depth)
             results.add_detailed(move);
         }
 
-        board.move(move);
-        nodes += perft_test<type::switchColor(color)>(board, results, depth - 1);
-        board.undo(move);
+        board.move<color>(move);
+        nodes += perft_test<utils::switchColor(color)>(board, results, depth - 1);
+        board.undo<color>(move);
     }
 
-    // Zobrist::insert(hash, nodes);
+    // tt.store(hash, nodes);
     return nodes;
 }

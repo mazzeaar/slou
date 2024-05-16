@@ -42,11 +42,11 @@ namespace magic {
      * @param square
      * @return Magic&
      */
-    template <type::PieceType type>
+    template <PieceType type>
     inline const Magic& getMagics(int square)
     {
-        static_assert((type == type::PieceType::bishop || type == type::PieceType::rook) && "PieceType is not allowed here!\n");
-        if constexpr ( isBishop(type) ) { return bishop_magics[square]; }
+        static_assert((type == PieceType::bishop || type == PieceType::rook) && "PieceType is not allowed here!\n");
+        if constexpr ( utils::isBishop(type) ) { return bishop_magics[square]; }
         else { return rook_magics[square]; }
     }
 

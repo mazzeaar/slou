@@ -1,52 +1,25 @@
 #pragma once
-
 #include <array>
-#include <random>
-#include "board.h"
-#include "definitions.h"
+#include <cstdint>
 #include <unordered_map>
-#include <map>
+#include <random>
 
-typedef uint64_t u64;
-#define table_size  4096 * 16
+#include "board/board.h"
+
+class Board; // fwd declaration
+
+constexpr int kNumSquares = 64;
+constexpr int kNumPieces = 12;
+constexpr int kNumCastling = 4;
 
 namespace Zobrist {
-    inline const int kNumSquares = 64;
-    inline const int kNumPieces = 12;
-    inline const int kNumPlayers = 2;
-    inline const int kNumCastling = 4;
-
-    // static std::array<uint64_t, table_size> table = { 0 };
+    extern std::array<std::array<uint64_t, kNumSquares>, kNumPieces> pieceKeys;
+    extern uint64_t blackToMove;
+    extern std::array<uint64_t, kNumCastling> castlingKeys;
+    extern std::array<uint64_t, kNumSquares> enPassantKeys;
     extern std::unordered_map<uint64_t, uint64_t> table;
-    // Zobrist hash tables
-    extern std::array<std::array<u64, kNumSquares>, kNumPieces> pieceKeys;
-    extern u64 blackToMove;
-    extern std::array<u64, kNumCastling> castlingKeys;
-    extern std::array<u64, kNumSquares> enPassantKeys;
 
-    // Functions
     void initialize();
-    u64 computeHash(const Board& board);
-
-    inline void insert(uint64_t hash, uint64_t count)
-    {
-        // table[hash] = count;
-        auto [it, inserted] = table.try_emplace(hash, count);
-        if ( !inserted ) {
-            // std::cerr << "Hash collision or duplicate insertion detected at hash: " << hash << std::endl;
-        }
-    }
-
-    inline bool has(uint64_t hash, uint64_t& count)
-    {
-        auto it = table.find(hash);
-        if ( it != table.end() ) {
-            count = it->second;
-            return true;
-        }
-
-        return false;
-    }
-
-    inline void clear() { table.clear(); }
+    uint64_t computeHash(const Board& board);
+    uint64_t updateHash(uint64_t hash, const Move& move, const Board& board);
 }

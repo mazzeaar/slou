@@ -5,18 +5,18 @@ namespace magic {
 
     u64 indexToU64(int index, int bits, u64 m);
 
-    template <type::PieceType type>
+    template <PieceType type>
     u64 findMagicNumber(int square, int bits, u64 mask);
 
-    template <type::PieceType type>
+    template <PieceType type>
     std::array<u64, 4096> generateAttackTable(int square, u64 mask);
 
-    template <type::PieceType type>
+    template <PieceType type>
     u64 getMask(int square);
-    template <> u64 getMask<type::PieceType::bishop>(int square);
-    template <> u64 getMask<type::PieceType::rook>(int square);
+    template <> u64 getMask<PieceType::bishop>(int square);
+    template <> u64 getMask<PieceType::rook>(int square);
 
-    template <type::PieceType type>
+    template <PieceType type>
     u64 getAttackPattern(int square, u64 occupancy);
 
     static int RBits[numSquares] = {
@@ -56,15 +56,15 @@ namespace magic {
 
     void initSquareMagics(int square)
     {
-        bishop_magics[square].mask = getMask<type::PieceType::bishop>(square);
-        bishop_magics[square].magic = findMagicNumber<type::PieceType::bishop>(square, BBits[square], bishop_magics[square].mask);
+        bishop_magics[square].mask = getMask<PieceType::bishop>(square);
+        bishop_magics[square].magic = findMagicNumber<PieceType::bishop>(square, BBits[square], bishop_magics[square].mask);
         bishop_magics[square].shift = 64 - get_bit_count(bishop_magics[square].mask);
-        bishop_magics[square].attack_table = generateAttackTable<type::PieceType::bishop>(square, bishop_magics[square].mask);
+        bishop_magics[square].attack_table = generateAttackTable<PieceType::bishop>(square, bishop_magics[square].mask);
 
-        rook_magics[square].mask = getMask<type::PieceType::rook>(square);
-        rook_magics[square].magic = findMagicNumber<type::PieceType::rook>(square, RBits[square], rook_magics[square].mask);
+        rook_magics[square].mask = getMask<PieceType::rook>(square);
+        rook_magics[square].magic = findMagicNumber<PieceType::rook>(square, RBits[square], rook_magics[square].mask);
         rook_magics[square].shift = 64 - get_bit_count(rook_magics[square].mask);
-        rook_magics[square].attack_table = generateAttackTable<type::PieceType::rook>(square, rook_magics[square].mask);
+        rook_magics[square].attack_table = generateAttackTable<PieceType::rook>(square, rook_magics[square].mask);
     }
 
     void initMagics()
@@ -113,10 +113,10 @@ namespace magic {
     }
 
 
-    template <type::PieceType type>
+    template <PieceType type>
     u64 findMagicNumber(int square, int bits, u64 mask)
     {
-        static_assert(type == type::PieceType::bishop || type == type::PieceType::rook && "Piece type is not supported!");
+        static_assert(type == PieceType::bishop || type == PieceType::rook && "Piece type is not supported!");
 
         constexpr u64 UNOCCUPIED = 0xFFFFFFFFFFFFFFFFULL;
         constexpr int maxAttempts = 100000000;
@@ -159,10 +159,10 @@ namespace magic {
         return 0ULL; // to make the compiler shut up
     }
 
-    template <type::PieceType type>
+    template <PieceType type>
     std::array<u64, 4096> generateAttackTable(int square, u64 mask)
     {
-        static_assert(type == type::PieceType::bishop || type == type::PieceType::rook && "Piece type is not supported");
+        static_assert(type == PieceType::bishop || type == PieceType::rook && "Piece type is not supported");
 
         int num_bits = get_bit_count(mask);
         int num_entries = 0b1 << num_bits; // 2^numBits possible blocker configurations
@@ -193,7 +193,7 @@ namespace magic {
     }
 
     template <>
-    u64 getMask<type::PieceType::rook>(int square)
+    u64 getMask<PieceType::rook>(int square)
     {
         u64 result = 0ULL;
         const int rank = square / 8;
@@ -208,7 +208,7 @@ namespace magic {
     }
 
     template <>
-    u64 getMask<type::PieceType::bishop>(int square)
+    u64 getMask<PieceType::bishop>(int square)
     {
         u64 result = 0ULL;
         const int rank = square / 8;
@@ -227,7 +227,7 @@ namespace magic {
     }
 
     template <>
-    u64 getAttackPattern<type::PieceType::rook>(int square, u64 occupancy)
+    u64 getAttackPattern<PieceType::rook>(int square, u64 occupancy)
     {
         u64 result = 0ULL;
         const int rank = square / 8;
@@ -258,7 +258,7 @@ namespace magic {
     }
 
     template <>
-    u64 getAttackPattern<type::PieceType::bishop>(int square, u64 occupancy)
+    u64 getAttackPattern<PieceType::bishop>(int square, u64 occupancy)
     {
         u64 result = 0ULL;
         const int rank = square / 8;

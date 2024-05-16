@@ -4,8 +4,6 @@ PerftResult start_perft_test(const std::string& fen, unsigned depth)
 {
     PerftResult results;
 
-    Zobrist::clear();
-
     if ( depth == 0 ) {
         results.add_end_node();
         return results;
@@ -16,11 +14,13 @@ PerftResult start_perft_test(const std::string& fen, unsigned depth)
 
     MoveList move_list;
     if ( white_to_start ) {
-        generate_moves<type::Color::white>(move_list, board);
+        generate_moves<Color::white>(move_list, board);
     }
     else {
-        generate_moves<type::Color::black>(move_list, board);
+        generate_moves<Color::black>(move_list, board);
     }
+
+    // TranspositionTable tt;
 
     if ( move_list.size() == 0 ) {
         results.add_checkmate();
@@ -32,15 +32,16 @@ PerftResult start_perft_test(const std::string& fen, unsigned depth)
             results.add_detailed(move);
         }
 
-        board.move(move);
         if ( white_to_start ) {
-            results.add_moves(move.toLongAlgebraic(), perft_test<type::Color::black>(board, results, depth - 1));
+            board.move<Color::white>(move);
+            results.add_moves(move.toLongAlgebraic(), perft_test<Color::black>(board, results, depth - 1));
+            board.undo<Color::white>(move);
         }
         else {
-            results.add_moves(move.toLongAlgebraic(), perft_test<type::Color::white>(board, results, depth - 1));
+            board.move<Color::black>(move);
+            results.add_moves(move.toLongAlgebraic(), perft_test<Color::white>(board, results, depth - 1));
+            board.undo<Color::black>(move);
         }
-
-        board.undo(move);
     }
 
     return results;
@@ -93,27 +94,27 @@ void PerftResult::add_detailed(const Move& move)
     ++detailed_data["total_nodes"];
 
     switch ( move.getFlag() ) {
-        case MoveFlag::KING_CASTLE:
-        case MoveFlag::QUEEN_CASTLE: {
+        case Move::Flag::castle_k:
+        case Move::Flag::castle_q: {
             ++detailed_data["castles"];
         } break;
-        case MoveFlag::CAPTURE: {
+        case Move::Flag::capture: {
             ++detailed_data["captures"];
         } break;
-        case MoveFlag::EN_PASSANT: {
+        case Move::Flag::ep: {
             ++detailed_data["captures"];
             ++detailed_data["en_passants"];
         } break;
-        case MoveFlag::KNIGHT_PROMO_CAPTURE:
-        case MoveFlag::BISHOP_PROMO_CAPTURE:
-        case MoveFlag::ROOK_PROMO_CAPTURE:
-        case MoveFlag::QUEEN_PROMO_CAPTURE: {
+        case Move::Flag::promo_x_n:
+        case Move::Flag::promo_x_b:
+        case Move::Flag::promo_x_r:
+        case Move::Flag::promo_x_q: {
             ++detailed_data["captures"];
         } // fallthrough
-        case MoveFlag::KNIGHT_PROMOTION:
-        case MoveFlag::BISHOP_PROMOTION:
-        case MoveFlag::ROOK_PROMOTION:
-        case MoveFlag::QUEEN_PROMOTION: {
+        case Move::Flag::promo_n:
+        case Move::Flag::promo_b:
+        case Move::Flag::promo_r:
+        case Move::Flag::promo_q: {
             ++detailed_data["promotions"];
         } break;
         default: break;
