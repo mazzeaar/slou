@@ -49,100 +49,53 @@ public:
 
     inline bool whiteTurn() const { return utils::isWhite(cur_color); }
 
-    u64 getEpField() const { return ep_field; }
+    constexpr inline u64 getEpField() const { return ep_field; }
 
-    template <Color color>
-    void move(const Move& move);
-    template <Color color>
-    void undo(const Move& move);
+    template <Color color> void move(const Move& move);
+    template <Color color> void undo(const Move& move);
 
     std::string toString() const;
     std::string toPrettyString(bool colored = false, bool emoji = true) const;
 
 private:
-
     constexpr void switchColor() { cur_color = utils::switchColor(cur_color); }
 
-    void updateEpField(u64 new_ep_field) { ep_field = new_ep_field; }
-
-    void tryToRemoveCastlingRights(const Move& move);
+    template <Color color, bool is_capture>
+    inline void tryToRemoveCastlingRights(const Move& move);
 
     std::vector<std::vector<char>> toCharMailbox() const;
     std::vector<std::vector<std::string>> toStringMailbox(bool emoji = false) const;
 
     // ALREADY REFACTORED
 public:
-    constexpr inline int getIndex(Piece piece) const { return static_cast<int>(piece); }
-    constexpr inline int getIndex(PieceType type, Color color) const { return getIndex(utils::getPiece(type, color)); }
+    constexpr inline int getPieceIndex(Piece piece) const { return static_cast<int>(piece); }
+    constexpr inline int getPieceIndex(PieceType type, Color color) const { return getPieceIndex(utils::getPiece(type, color)); }
 
-    template <PieceType type, Color color>
-    static constexpr inline int getIndex();
+    template <PieceType type, Color color> static constexpr inline int getIndex();
+    template <Piece piece> static constexpr inline int getIndex();
 
-    template <Piece piece>
-    static constexpr inline int getIndex();
-
-    template <PieceType type, Color color>
-    constexpr inline uint64_t getPieces() const;
-
-    template <Piece piece>
-    constexpr inline uint64_t getPieces() const;
-
-    // IMPORTANT! from & to are assumed to be the index of the piece, not the bitboard with the bit already set!
-    template <PieceType type, Color color>
-    constexpr inline void movePiece(uint64_t from, uint64_t to);
-
-    // IMPORTANT! square is assumed to be the index of the piece, not the bitboard with the bit already set!
-    template <PieceType type, Color color>
-    constexpr inline void removePiece(uint64_t square);
-
-    // IMPORTANT! square is assumed to be the index of the piece, not the bitboard with the bit already set!
-    template <PieceType type, Color color>
-    constexpr inline void placePiece(uint64_t square);
-
-    constexpr inline Piece getPieceFromSquare(int square) const
-    {
-        const u64 s = single_bit_u64(square);
-        for ( int i = 0; i < 12; ++i ) {
-            if ( (pieces[i] & s) != 0ULL ) {
-                return static_cast<Piece>(i);
-            }
-        }
-
-        return Piece::none;
-        /*
-        return mailbox[square];
-        */
-    }
-
+    constexpr inline Piece getPieceFromSquare(int square) const { return mailbox[square]; }
     constexpr inline Color getColorFromSquare(int square) const { return utils::pieceColor(getPieceFromSquare(square)); }
     constexpr inline PieceType getPieceTypeFromSquare(int square) const { return utils::getPieceType(getPieceFromSquare(square)); }
 
-    constexpr inline u64 getOccupancy() const
+    template <PieceType type, Color color> constexpr inline uint64_t getPieces() const;
+    template <Piece piece> constexpr inline uint64_t getPieces() const;
+    constexpr inline u64 getOccupancy() const { return pieces[12] | pieces[13]; }
+
+    template <Color color>
+    constexpr inline u64 getEnemy() const
     {
-        return pieces[0] | pieces[1] | pieces[2] | pieces[3] | pieces[4] | pieces[5] | pieces[6] | pieces[7] | pieces[8] | pieces[9] | pieces[10] | pieces[11];
-        // return pieces[12] | pieces[13];
+        constexpr Color enemy_color = utils::switchColor(color);
+        constexpr int enemy_idx = getIndex<PieceType::none, enemy_color>();
+        return pieces[enemy_idx];
     }
 
-    constexpr inline u64 getEnemy(Color color) const
+    template <PieceType type, Color color>
+    constexpr inline u64 getBoard() const
     {
-        Color enemy_color = utils::switchColor(color);
-        return getPawns(enemy_color) | getKnights(enemy_color) | getBishops(enemy_color)
-            | getRooks(enemy_color) | getQueens(enemy_color) | getKing(enemy_color);
+        constexpr int index = getIndex<type, color>();
+        return pieces[index];
     }
-
-    constexpr inline u64 getBoard(Piece piece) const { return pieces[getIndex(piece)]; }
-    constexpr inline u64 getBoard(PieceType type, Color color) const { return pieces[getIndex(type, color)]; }
-
-    // ================================
-    // Get Specific Pieces
-    // ================================
-
-    constexpr inline u64 getPawns(Color color) const { return getBoard(PieceType::pawn, color); }
-    constexpr inline u64 getKnights(Color color) const { return getBoard(PieceType::knight, color); }
-    constexpr inline u64 getBishops(Color color) const { return getBoard(PieceType::bishop, color); }
-    constexpr inline u64 getRooks(Color color) const { return getBoard(PieceType::rook, color); }
-    constexpr inline u64 getQueens(Color color) const { return getBoard(PieceType::queen, color); }
-    constexpr inline u64 getKing(Color color) const { return getBoard(PieceType::king, color); }
 
     // ================================
     // Castling Rights
@@ -215,13 +168,26 @@ public:
     template <Color color>
     inline void move_piece(Piece piece, int from, int to);
 
+    // IMPORTANT! from & to are assumed to be the index of the piece, not the bitboard with the bit already set!
+    template <PieceType type, Color color>
+    constexpr inline void movePiece(uint64_t from, uint64_t to);
+
+    // IMPORTANT! square is assumed to be the index of the piece, not the bitboard with the bit already set!
+    template <PieceType type, Color color>
+    constexpr inline void removePiece(uint64_t square);
+
+    // IMPORTANT! square is assumed to be the index of the piece, not the bitboard with the bit already set!
+    template <PieceType type, Color color>
+    constexpr inline void placePiece(uint64_t square);
+
     // ================================
     // Stuff
     // ================================
 
-    inline bool isCheck(Color color, u64 enemy_attacks) const
+    template <Color color>
+    constexpr inline bool isCheck(u64 enemy_attacks) const
     {
-        return (enemy_attacks & getBoard(PieceType::king, color)) != 0ULL;
+        return (enemy_attacks & getBoard<PieceType::king, color>()) != 0ULL;
     }
 
     void storeState(const Move& move);

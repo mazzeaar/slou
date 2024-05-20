@@ -5,6 +5,8 @@
 
 #define ENABLE_LOGGER   
 
+#define ENABLE_DEBUG    0
+
 // as testing for checks and mates is quite expensive i have added an option to disable them
 #ifndef SIMPLE_TEST
 #define SIMPLE_TEST     1

@@ -29,6 +29,28 @@ public:
     static inline u64 generateKnightMask(u64 knights);
     static inline u64 generateKingMask(u64 king);
 
+    template <Color color>
+    static inline u64 getPawnAttackMask(u64 pawns) { return generatePawnMask<color>(pawns); }
+
+    static inline u64 getKnightAttackMask(u64 knights)
+    {
+        uint64_t result = 0ULL;
+        BIT_LOOP(knights)
+        {
+            const int from = get_LSB(knights);
+            result |= knight_attacks[from];
+        }
+        return result;
+    }
+
+    static inline u64 getKingAttackMask(u64 king)
+    {
+        const int from = get_LSB(king);
+        const uint64_t result = king_attacks[from];
+        return result;
+    }
+
+
 private:
     template <Color color>
     static inline u64 pawnMove(u64 pawns, u64 occupancy);

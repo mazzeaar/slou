@@ -10,6 +10,7 @@
 #include <fstream>
 #include <cmath>
 #include <nlohmann/json.hpp>
+
 using json = nlohmann::json;
 
 struct BenchmarkStats {
@@ -31,8 +32,10 @@ struct BenchmarkStats {
 
 extern std::map<std::string, BenchmarkStats> BENCHMARK_LIST;
 
-#define DEBUG_INIT              std::map<std::string, BenchmarkStats> BENCHMARK_LIST;
 #define FUNCTION_SIGNATURE      __FUNCTION__
+
+#if ENABLE_DEBUG == 1
+#define DEBUG_INIT              std::map<std::string, BenchmarkStats> BENCHMARK_LIST;
 
 #define DEBUG_START             auto start_##FUNCTION_SIGNATURE = std::chrono::high_resolution_clock::now();
 
@@ -43,6 +46,11 @@ extern std::map<std::string, BenchmarkStats> BENCHMARK_LIST;
         BENCHMARK_LIST[FUNCTION_SIGNATURE].total_duration += duration_##FUNCTION_SIGNATURE; \
         BENCHMARK_LIST[FUNCTION_SIGNATURE].n_calls++; \
     } while(0)
+#else
+#define DEBUG_INIT              do {} while (0)
+#define DEBUG_START             do {} while (0)
+#define DEBUG_END               do {} while (0)
+#endif
 
 inline std::map<std::string, BenchmarkStats> loadBenchmarkData(const std::string& filename)
 {

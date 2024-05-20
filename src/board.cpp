@@ -4,7 +4,7 @@
 
 Board::Board(const std::string& fen)
 {
-    updateEpField(0ULL);
+    ep_field = 0ULL;
 
     std::fill(mailbox.begin(), mailbox.end(), Piece::none);
 
@@ -83,13 +83,11 @@ Board::Board(const std::string& fen)
             } break;
             case 2: { // ep target
                 if ( token != "-" ) {
-                    int file = token[0] - 'a';
-                    int rank = token[1] - '0';
-
-                    updateEpField(single_bit_u64((8 * rank) + file));
+                    int square = utils::coordinateToIndex(token);
+                    ep_field = single_bit_u64(square);
                 }
                 else {
-                    updateEpField(0ULL);
+                    ep_field = 0ULL;
                 }
 
             } break;
@@ -166,51 +164,6 @@ std::string Board::getFen() const
     res += std::to_string(full_move_clock);
 
     return res;
-}
-
-// hacky way to disable castling rights;
-void Board::tryToRemoveCastlingRights(const Move& move)
-{
-    if ( utils::getPieceType(move_history.top().moving_piece) == PieceType::rook ) {
-        if ( move.getFrom() == 0 ) {
-            removeCastleQs(Color::white);
-        }
-        else if ( move.getFrom() == 7 ) {
-            removeCastleKs(Color::white);
-        }
-        else if ( move.getFrom() == 56 ) {
-            removeCastleQs(Color::black);
-        }
-        else if ( move.getFrom() == 63 ) {
-            removeCastleKs(Color::black);
-        }
-    }
-
-    if ( utils::getPieceType(move_history.top().moving_piece) == PieceType::king ) {
-        if ( move.getFrom() == 4 ) {
-            removeCastleKs(Color::white);
-            removeCastleQs(Color::white);
-        }
-        else if ( move.getFrom() == 60 ) {
-            removeCastleKs(Color::black);
-            removeCastleQs(Color::black);
-        }
-    }
-
-    if ( utils::getPieceType(move_history.top().captured_piece) == PieceType::rook ) {
-        if ( move.getTo() == 0 ) {
-            removeCastleQs(Color::white);
-        }
-        else if ( move.getTo() == 7 ) {
-            removeCastleKs(Color::white);
-        }
-        else if ( move.getTo() == 56 ) {
-            removeCastleQs(Color::black);
-        }
-        else if ( move.getTo() == 63 ) {
-            removeCastleKs(Color::black);
-        }
-    }
 }
 
 void Board::storeState(const Move& move)

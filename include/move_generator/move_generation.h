@@ -47,15 +47,6 @@ inline u64 pseudolegal_moves(MoveList& move_list, const Board& board)
 {
     DEBUG_START;
 
-    if ( !initialized_stuff ) {
-        initializePrecomputedStuff();
-        initialized_stuff = true;
-    }
-
-    if ( board.getKing(color) == 0ULL ) {
-        return 0ULL;
-    }
-
     const u64 enemy_attacks = generate_attacks<utils::switchColor(color)>(board);
 
     leapers::pawn<color>(move_list, board);
@@ -82,7 +73,7 @@ inline u64 generate_moves(MoveList& move_list, Board& board)
 
         const u64 enemy_attacks = generate_attacks<utils::switchColor(color)>(board);
 
-        if ( board.isCheck(color, enemy_attacks) ) {
+        if ( board.isCheck<color>(enemy_attacks) ) {
             board.undo<color>(move_list[i]);
             move_list.remove(i);
         }
@@ -110,13 +101,21 @@ inline u64 generate_attacks(const Board& board)
     u64 attacks = 0ULL;
     const u64 occupancy = board.getOccupancy();
 
-    attacks |= leapers::generatePawnMask<color>(board.getPawns(color));
-    attacks |= leapers::generateKnightMask(board.getKnights(color));
-    attacks |= leapers::generateKingMask(board.getKing(color));
+    const u64 pawns = board.getBoard<PieceType::pawn, color>();
+    const u64 knights = board.getBoard<PieceType::knight, color>();
+    const u64 king = board.getBoard<PieceType::king, color>();
 
-    attacks |= sliders::getBitboard<PieceType::bishop>(board.getBishops(color), occupancy);
-    attacks |= sliders::getBitboard<PieceType::rook>(board.getRooks(color), occupancy);
-    attacks |= sliders::getBitboard<PieceType::queen>(board.getQueens(color), occupancy);
+    const u64 bishops = board.getBoard<PieceType::bishop, color>();
+    const u64 rooks = board.getBoard<PieceType::rook, color>();
+    const u64 queens = board.getBoard<PieceType::queen, color>();
+
+    attacks |= leapers::getPawnAttackMask<color>(pawns);
+    attacks |= leapers::getKnightAttackMask(knights);
+    attacks |= leapers::getKingAttackMask(king);
+
+    attacks |= sliders::getBitboard<PieceType::bishop>(bishops, occupancy);
+    attacks |= sliders::getBitboard<PieceType::rook>(rooks, occupancy);
+    attacks |= sliders::getBitboard<PieceType::queen>(queens, occupancy);
 
     DEBUG_END;
     return attacks;

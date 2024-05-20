@@ -8,6 +8,8 @@
 template <Color color>
 void leapers::pawn(MoveList& move_list, const Board& board)
 {
+    DEBUG_START;
+
     static constexpr int OFFSET_MOVE = (utils::isWhite(color)) ? -8 : 8;
     static constexpr int OFFSET_PUSH = (utils::isWhite(color)) ? -16 : 16;
     static constexpr int OFFSET_ATTACK_L = (utils::isWhite(color)) ? -7 : 7;
@@ -19,10 +21,10 @@ void leapers::pawn(MoveList& move_list, const Board& board)
     static constexpr uint64_t PUSH_RANK = (utils::isWhite(color)) ? RANK_2 : RANK_7;
 
     const uint64_t occupancy = board.getOccupancy();
-    const uint64_t enemy = board.getEnemy(color);
+    const uint64_t enemy = board.getEnemy<color>();
     const uint64_t ep_field = board.getEpField();
 
-    const uint64_t pawns = board.getPawns(color);
+    const uint64_t pawns = board.getBoard<PieceType::pawn, color>();
 
     const uint64_t move_pawns = pawns & ~PROMO_RANK;
     const uint64_t push_pawns = pawns & PUSH_RANK;
@@ -139,15 +141,19 @@ void leapers::pawn(MoveList& move_list, const Board& board)
             move_list.add(Move::make<Move::Flag::promo_x_q>(from, to));
         }
     }
+
+    DEBUG_END;
 }
 
 template <Color color>
 void leapers::knight(MoveList& move_list, const Board& board)
 {
-    const uint64_t occupancy = board.getOccupancy();
-    const uint64_t enemy = board.getEnemy(color);
+    DEBUG_START;
 
-    uint64_t knights = board.getKnights(color);
+    const uint64_t occupancy = board.getOccupancy();
+    const uint64_t enemy = board.getEnemy<color>();
+
+    uint64_t knights = board.getBoard<PieceType::knight, color>();
     BIT_LOOP(knights)
     {
         const uint64_t from = get_LSB(knights);
@@ -166,15 +172,19 @@ void leapers::knight(MoveList& move_list, const Board& board)
             move_list.add(Move::make<Move::Flag::capture>(from, to));
         }
     }
+
+    DEBUG_END;
 }
 
 template <Color color>
 void leapers::king(MoveList& move_list, const Board& board, u64 enemy_attacks)
 {
-    const u64 occupancy = board.getOccupancy();
-    const u64 enemy = board.getEnemy(color);
+    DEBUG_START;
 
-    u64 king = board.getKing(color);
+    const u64 occupancy = board.getOccupancy();
+    const u64 enemy = board.getEnemy<color>();
+
+    u64 king = board.getBoard<PieceType::king, color>();
     const uint64_t from = get_LSB(king);
 
     u64 moves = king_attacks[from] & ~occupancy & ~enemy_attacks;
@@ -201,6 +211,8 @@ void leapers::king(MoveList& move_list, const Board& board, u64 enemy_attacks)
             move_list.add(Move::make<Move::Flag::castle_q>(from, from - 2));
         }
     }
+
+    DEBUG_END;
 }
 
 // ================================
