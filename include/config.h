@@ -1,6 +1,11 @@
 #pragma once
 
+#define TODO            std::cerr << RED << "TODO: " << RESET
+#define STARTPOS        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
 #define ENABLE_LOGGER   
+
+#define ENABLE_DEBUG    0
 
 // as testing for checks and mates is quite expensive i have added an option to disable them
 #ifndef SIMPLE_TEST

@@ -2,148 +2,213 @@
 #include <chrono>
 #include <iomanip>
 #include <string>
+#include <sstream>
+#include <cctype>
 
 #include "move_generator/move_generation.h"
 #include "perft/perft_testing.h"
+#include "game.h"
 
+#include "temp_cmd_manager.h"
+
+#if ENABLE_DEBUG == 1
 DEBUG_INIT;
-static const std::string engine_prefix = "> slou: ";
+#endif
 
-template <type::Color color>
-u64 debug_perft(Board& board, int depth)
+#include "config.h"
+#include "debug.h"
+
+void perft_test(const std::vector<std::string>& args);
+void detailed_perft_test(const std::vector<std::string>& args);
+void speed_test(const std::vector<std::string>& args);
+void uci_interface();
+
+int main(int argc, char** argv)
 {
-    MoveList move_list;
-    u64 nodes = generate_moves<color>(move_list, board);
+    std::vector<std::string> args(argv, argv + argc);
+    initializePrecomputedStuff();
 
-    if ( depth == 1 ) {
-        return nodes;
-    }
-
-    nodes = 0ULL;
-    for ( const auto& move : move_list ) {
-        board.move(move);
-        u64 move_nodes = perft<type::switchColor(color)>(board, depth - 1);
-        board.undo(move);
-
-
-        std::cout << move.toLongAlgebraic() << ": " << move_nodes << '\n';
-        nodes += move_nodes;
-    }
-
-    std::cout << "\nNodes searched: " << nodes << '\n';
-    return nodes;
-}
-
-template <type::Color color>
-u64 perft(Board& board, int depth)
-{
-    MoveList move_list;
-    u64 nodes = generate_moves<color>(move_list, board);
-
-    if ( depth == 1 ) {
-        return nodes;
-    }
-
-    nodes = 0ULL;
-    for ( const auto& move : move_list ) {
-        board.move(move);
-        nodes += perft<type::switchColor(color)>(board, depth - 1);
-        board.undo(move);
-    }
-
-    return nodes;
-}
-
-inline void speedtest(const std::string& fen, int depth, const u64 expected)
-{
-    Board board(fen);
-    u64 nodes = 0ULL;
-
-    auto begin = std::chrono::high_resolution_clock::now();
-    if ( board.whiteTurn() ) {
-        nodes = perft<type::Color::white>(board, depth);
+    if ( argc > 1 ) {
+        if ( args[1] == "-test" ) {
+            PerftTestSuite perft_tests;
+            perft_tests.runTests();
+        }
+        else if ( args[1] == "-perft" ) {
+            perft_test(args);
+        }
+        else if ( args[1] == "-speed" ) {
+            speed_test(args);
+        }
+        else if ( args[1] == "-perftd" ) {
+            detailed_perft_test(args);
+        }
+        else {
+            std::cout << "Usage:\n"
+                << "-test" << '\n'
+                << "-perft <depth> [\"fen\"|startpos] <expected>" << '\n'
+                << "-speed <depth> [\"fen\"|startpos]" << '\n'
+                << "-perftd <depth> [\"fen\"|startpos]"
+                << '\n';
+        }
     }
     else {
-        nodes = perft<type::Color::black>(board, depth);
+        uci_interface();
     }
+
+
+#if ENABLE_DEBUG == 1
+    printBenchmarkInfo();
+#endif
+
+    return 0;
+}
+
+void uci_interface()
+{
+    std::cout << '\n'
+        << "  ********   **           *******     **     **\n"
+        << " **//////   /**          **/////**   /**    /**\n"
+        << "/**         /**         **     //**  /**    /**\n"
+        << "/*********  /**        /**      /**  /**    /**\n"
+        << "////////**  /**        /**      /**  /**    /**\n"
+        << "       /**  /**        //**     **   /**    /**\n"
+        << " ********   /********   //*******    //*******\n"
+        << "////////    ////////     ///////      ///////\n\n"
+        << "A chess egine by ama - 2024\n\n"
+        << "try 'help' if you are lost <3\n\n";
+
+
+    CommandManager cmd_manager;
+    cmd_manager.parseCommand();
+}
+
+void detailed_perft_test(const std::vector<std::string>& args)
+{
+    const static std::string usage = "-perftd <depth> [\"fen\"|startpos]";
+    if ( args.size() != 4 ) {
+        std::cout << "usage: " << usage << '\n';
+        return;
+    }
+    int depth = 0;
+    try {
+        depth = std::stoi(args[2]);
+    }
+    catch ( std::exception& e ) {
+        std::cout << "\'depth\' must be a number!\n"
+            << "usage: " << usage << '\n';
+        return;
+    }
+    const std::string fen = args[3];
+    Game game;
+    try {
+        game = Game(fen);
+    }
+    catch ( std::string& e ) {
+        std::cout << e << '\n'
+            << "usage: " << usage << '\n';
+        return;
+    }
+
+    game.perftDetailEntry(depth);
+}
+
+// -perft <depth> ["fen"|startpos] <expected>
+void perft_test(const std::vector<std::string>& args)
+{
+    const static std::string usage = "-perft <depth> [\"fen\"|startpos] <expected>";
+    if ( args.size() < 4 || args.size() > 5 ) {
+        std::cout << "usage: " << usage << '\n';
+        return;
+    }
+
+    int depth = 0;
+    try {
+        depth = std::stoi(args[2]);
+    }
+    catch ( std::exception& e ) {
+        std::cout << "\'depth\' must be a number!\n"
+            << "usage: " << usage << '\n';
+        return;
+    }
+
+    const std::string fen = args[3];
+
+    Game game;
+    try {
+        game = Game(fen);
+    }
+    catch ( std::string& e ) {
+        std::cout << e << '\n'
+            << "usage: " << usage << '\n';
+        return;
+    }
+
+    uint64_t perft_result = game.perftSimpleEntry(depth);
+
+    if ( args.size() == 4 ) {
+        std::cout << perft_result << '\n';
+    }
+    else {
+        uint64_t expected = 0ULL;
+        try {
+            expected = std::stoull(args[4]);
+        }
+        catch ( std::exception& e ) {
+            std::cout << "\'expected\' must be a number!\n"
+                << "usage: " << usage << '\n';
+            return;
+        }
+
+        if ( perft_result == expected ) {
+            std::cout << GREEN << "passed: " << RESET << perft_result << '\n';
+        }
+        else {
+            std::cout << RED << "failed: " << RESET << std::left << std::setw(10) << expected
+                << std::left << std::setw(10) << perft_result
+                << std::left << std::setw(10) << " "
+                << "input: " << "-perft " << depth << " " << fen << " " << expected
+                << '\n';
+        }
+    }
+}
+
+// -speed <depth> ["fen"|startpos]
+void speed_test(const std::vector<std::string>& args)
+{
+    const static std::string usage = "-speed <depth> [\"fen\"|startpos]";
+    if ( args.size() != 4 ) {
+        std::cout << "usage: " << usage << '\n';
+        return;
+    }
+
+    int depth = 0;
+    try {
+        depth = std::stoi(args[2]);
+    }
+    catch ( std::exception& e ) {
+        std::cout << "\'depth\' must be a number!\n"
+            << "usage: " << usage << '\n';
+        return;
+    }
+
+    const std::string fen = args[3];
+
+    Game game;
+    try {
+        game = Game(fen);
+    }
+    catch ( std::string& e ) {
+        std::cout << e << '\n'
+            << "usage: " << usage << '\n';
+        return;
+    }
+
+    auto begin = std::chrono::high_resolution_clock::now();
+    uint64_t perft_result = game.perftSimpleEntry(depth);
     auto end = std::chrono::high_resolution_clock::now();
 
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
-    std::cout << nodes << " nodes in " << duration << "ms\n"
-        << "NPS = " << (nodes * 1000) / (duration) << '\n'
-        << "expected: " << expected << '\n'
-        << "diff: " << (expected > nodes ? expected - nodes : nodes - expected) << '\n'<<'\n';
-}
+    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count();
+    const auto nps = perft_result * 1000 / duration;
 
-#include <iostream>
-#include <iomanip>
-#include <string>
-#include <vector>
-
-// Helper to print a single row
-template<typename T>
-void printRow(const T& value)
-{
-    std::cout << std::right << std::setw(20) << value;
-}
-
-template<typename T, typename... Args>
-void printRow(const T& first, Args... args)
-{
-    std::cout << std::right << std::setw(20) << first;
-    printRow(args...);  // Recursive call
-}
-
-// Function to print the header or any row with variable number of columns
-template<typename... Args>
-void printTableLine(Args... args)
-{
-    printRow(args...);
-    std::cout << std::endl;
-}
-
-// Separator lines for clarity in table
-void printSeparator(int count)
-{
-    for ( int i = 0; i < count; i++ ) {
-        std::cout << "--------------------";
-    }
-    std::cout << std::endl;
-}
-
-int main(int argc, char* argv[])
-{
-    if ( argc > 1 ) {
-        if ( strcmp(argv[1], "--perft") == 0 ) {
-            PerftTestSuite tests;
-            tests.runTests();
-        }
-
-        if ( strcmp(argv[1], "--speedtest") == 0 ) {
-            std::string fen = argv[2];
-            fen = fen.substr(1, fen.size() - 2);
-            std::string n = argv[3];
-            speedtest(fen, std::stoi(n), std::stoi(argv[4]));
-        }
-
-        if ( strcmp(argv[1], "--debug") == 0 ) {
-            std::string fen = argv[2];
-            fen = fen.substr(1, fen.size() - 2);
-            int depth = std::stoi(argv[3]);
-
-            Board board(fen);
-
-            if ( board.whiteTurn() ) {
-                debug_perft<type::Color::white>(board, depth);
-            }
-            else {
-                debug_perft<type::Color::black>(board, depth);
-            }
-        }
-    }
-
-    magic::initMagics();
-
-    // printBenchmarkInfo();
-    return 0;
+    std::cout << perft_result << " nodes in " << duration << "ms (" << nps << "nps)\n";
 }

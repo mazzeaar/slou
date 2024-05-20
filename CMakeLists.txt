@@ -3,15 +3,10 @@ project(slou VERSION 0.1 DESCRIPTION "A simple chess engin")
 
 set(CMAKE_CXX_STANDARD 20) 
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra -march=native")
+set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
+set(CMAKE_OSX_ARCHITECTURES "arm64")
 
 include_directories(include)
-
-include(CheckIPOSupported)
-check_ipo_supported(RESULT result)
-if(result)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
 
 # add json parser
 find_package(nlohmann_json 3.10.5 REQUIRED)
@@ -34,8 +29,8 @@ add_custom_target(run
 )
 
 # perft test
-add_custom_target(perft
-    COMMAND slou --perft
+add_custom_target(test
+    COMMAND slou -test
     COMMENT "Running perft tests"
     USES_TERMINAL
 )

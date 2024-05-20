@@ -6,30 +6,32 @@
 #include <string>
 #include <array>
 
-namespace type {
-    enum class Color {
-        white, black, none
-    };
+#define BIT_LOOP(X) for (; X != 0ULL ; X &= X - 1)
 
-    enum class PieceType {
-        pawn, knight, bishop, rook, queen, king, none
-    };
+enum class Color {
+    white, black, none
+};
 
-    enum class Piece {
-        P, N, B, R, Q, K,
-        p, n, b, r, q, k,
-        none
-    };
+enum class PieceType {
+    pawn, knight, bishop, rook, queen, king, none
+};
 
-    constexpr uint8_t isBishop(PieceType type) { return type == PieceType::bishop; }
-    constexpr uint8_t isRook(PieceType type) { return type == PieceType::rook; }
-    constexpr uint8_t isQueen(PieceType type) { return type == PieceType::queen; }
+enum class Piece {
+    P, N, B, R, Q, K,
+    p, n, b, r, q, k,
+    none
+};
 
-    constexpr uint8_t toByte(Piece piece) { return static_cast<uint8_t>(piece); }
-    constexpr uint8_t toByte(PieceType type) { return static_cast<uint8_t>(type); }
-    constexpr uint8_t toByte(Color color) { return static_cast<uint8_t>(color); }
+namespace utils {
+    inline constexpr uint8_t isBishop(PieceType type) { return type == PieceType::bishop; }
+    inline constexpr uint8_t isRook(PieceType type) { return type == PieceType::rook; }
+    inline constexpr uint8_t isQueen(PieceType type) { return type == PieceType::queen; }
 
-    constexpr Color getColor(Piece piece)
+    inline constexpr uint8_t toByte(Piece piece) { return static_cast<uint8_t>(piece); }
+    inline constexpr uint8_t toByte(PieceType type) { return static_cast<uint8_t>(type); }
+    inline constexpr uint8_t toByte(Color color) { return static_cast<uint8_t>(color); }
+
+    inline constexpr Color getColor(Piece piece)
     {
         switch ( piece ) {
             case Piece::p: case Piece::n: case Piece::b: case Piece::r: case Piece::q: case Piece::k:
@@ -41,7 +43,7 @@ namespace type {
         }
     }
 
-    constexpr Color switchColor(Color color)
+    inline constexpr Color switchColor(Color color)
     {
         if ( color == Color::none ) {
             return Color::none;
@@ -51,7 +53,20 @@ namespace type {
         }
     }
 
-    constexpr Piece switchColor(Piece piece)
+    inline constexpr Color operator!(Color color)
+    {
+        if ( color == Color::none ) {
+            return Color::none;
+        }
+        else if ( color == Color::white ) {
+            return Color::black;
+        }
+        else {
+            return Color::white;
+        }
+    }
+
+    inline constexpr Piece switchColor(Piece piece)
     {
         switch ( piece ) {
             case Piece::p: return Piece::P;
@@ -73,7 +88,7 @@ namespace type {
     constexpr bool isWhite(Piece piece) { return getColor(piece) == Color::white; }
     constexpr bool isWhite(Color color) { return color == Color::white; }
 
-    constexpr std::array<const char*, 64> square_to_coordinates = {
+    static constexpr std::array<std::string_view, 64> square_to_coordinates = { {
         "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
         "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
         "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3",
@@ -81,8 +96,27 @@ namespace type {
         "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
         "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6",
         "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
-        "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
-    };
+        "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"
+    } };
+
+    constexpr int coordinateToIndex(const std::string& str)
+    {
+        if ( str.length() != 2 ) {
+            return 65;
+        }
+
+        char file = str[0];
+        char rank = str[1];
+
+        if ( file < 'a' || file > 'h' || rank < '1' || rank > '8' ) {
+            return 65;
+        }
+
+        int fileIndex = file - 'a';
+        int rankIndex = rank - '1';
+
+        return rankIndex * 8 + fileIndex;
+    }
 
     constexpr Color pieceColor(Piece piece)
     {
@@ -221,4 +255,4 @@ namespace type {
         return PieceToChar(getPiece(type, color));
     }
 
-}; // namespace type
+}; // namespace utils

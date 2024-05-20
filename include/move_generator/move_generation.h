@@ -20,7 +20,7 @@
 
 #include "leapers/leapers.h"
 #include "sliders/sliders.h"
-#include "board.h"
+#include "board/board.h"
 #include "move.h"
 
 #include "zobrist.h"
@@ -42,56 +42,43 @@ inline void initializePrecomputedStuff()
  * @param move_list     A container that can store our generated moves
  * @param board         The current board representation
  */
-template <type::Color color>
+template <Color color>
 inline u64 pseudolegal_moves(MoveList& move_list, const Board& board)
 {
     DEBUG_START;
 
-    if ( !initialized_stuff ) {
-        initializePrecomputedStuff();
-        initialized_stuff = true;
-    }
-
-    if ( board.getKing(color) == 0ULL ) {
-        return 0ULL;
-    }
-
-    const u64 enemy_attacks = generate_attacks<type::switchColor(color)>(board);
+    const u64 enemy_attacks = generate_attacks<utils::switchColor(color)>(board);
 
     leapers::pawn<color>(move_list, board);
     leapers::knight<color>(move_list, board);
     leapers::king<color>(move_list, board, enemy_attacks);
 
-    sliders::generateMoves<type::PieceType::bishop, color>(move_list, board);
-    sliders::generateMoves<type::PieceType::rook, color>(move_list, board);
-    sliders::generateMoves<type::PieceType::queen, color>(move_list, board);
+    sliders::generateMoves<PieceType::bishop, color>(move_list, board);
+    sliders::generateMoves<PieceType::rook, color>(move_list, board);
+    sliders::generateMoves<PieceType::queen, color>(move_list, board);
 
     DEBUG_END;
     return move_list.size();
 }
 
-template <type::Color color>
+template <Color color>
 inline u64 generate_moves(MoveList& move_list, Board& board)
 {
     DEBUG_START;
 
     pseudolegal_moves<color>(move_list, board);
 
-    if ( move_list.size() == 0 ) {
-        return 0ULL;
-    }
-
     for ( size_t i = 0; i < move_list.size(); ) {
-        board.move(move_list[i]);
+        board.move<color>(move_list[i]);
 
-        const u64 enemy_attacks = generate_attacks<type::switchColor(color)>(board);
+        const u64 enemy_attacks = generate_attacks<utils::switchColor(color)>(board);
 
-        if ( board.isCheck(color, enemy_attacks) ) {
-            board.undo(move_list[i]);
+        if ( board.isCheck<color>(enemy_attacks) ) {
+            board.undo<color>(move_list[i]);
             move_list.remove(i);
         }
         else {
-            board.undo(move_list[i]);
+            board.undo<color>(move_list[i]);
             ++i;
         }
     }
@@ -107,20 +94,28 @@ inline u64 generate_moves(MoveList& move_list, Board& board)
  * @param board         a board
  * @return u64          the ORed enemy attacks
  */
-template <type::Color color>
+template <Color color>
 inline u64 generate_attacks(const Board& board)
 {
     DEBUG_START;
     u64 attacks = 0ULL;
     const u64 occupancy = board.getOccupancy();
 
-    attacks |= leapers::generatePawnMask<color>(board.getPawns(color));
-    attacks |= leapers::generateKnightMask(board.getKnights(color));
-    attacks |= leapers::generateKingMask(board.getKing(color));
+    const u64 pawns = board.getBoard<PieceType::pawn, color>();
+    const u64 knights = board.getBoard<PieceType::knight, color>();
+    const u64 king = board.getBoard<PieceType::king, color>();
 
-    attacks |= sliders::getBitboard<type::PieceType::bishop>(board.getBishops(color), occupancy);
-    attacks |= sliders::getBitboard<type::PieceType::rook>(board.getRooks(color), occupancy);
-    attacks |= sliders::getBitboard<type::PieceType::queen>(board.getQueens(color), occupancy);
+    const u64 bishops = board.getBoard<PieceType::bishop, color>();
+    const u64 rooks = board.getBoard<PieceType::rook, color>();
+    const u64 queens = board.getBoard<PieceType::queen, color>();
+
+    attacks |= leapers::getPawnAttackMask<color>(pawns);
+    attacks |= leapers::getKnightAttackMask(knights);
+    attacks |= leapers::getKingAttackMask(king);
+
+    attacks |= sliders::getBitboard<PieceType::bishop>(bishops, occupancy);
+    attacks |= sliders::getBitboard<PieceType::rook>(rooks, occupancy);
+    attacks |= sliders::getBitboard<PieceType::queen>(queens, occupancy);
 
     DEBUG_END;
     return attacks;

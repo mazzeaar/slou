@@ -5,7 +5,7 @@
 
 #ifdef ENABLE_LOGGER
 
-#define LOG_ERROR   std::cerr << RED << "[ error ]" << "[" << __FUNCTION__ << "]"
+#define LOG_ERROR   std::cerr << RED << "[ error ]" << RESET << "[" << __FUNCTION__ << "]"
 #else   
 #define LOG_ERROR   while (false) std::cerr
 #endif
