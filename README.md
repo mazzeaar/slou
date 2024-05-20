@@ -3,7 +3,7 @@
 This is my $(n+1)^\text{th}$ try at creating a chess engine.
 Its slow, has no UCI (yet) and has some bugs.
 
-All [perft tests](https://www.chessprogramming.org/Perft_Results) run bugfree now.
+All [perft tests](https://www.chessprogramming.org/Perft_Results) (+127 other positions) run bugfree now.
 
 ## Speed
 Movegen is bugfree now.
