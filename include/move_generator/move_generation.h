@@ -30,7 +30,7 @@ static bool initialized_stuff = false;
 inline void initializePrecomputedStuff()
 {
     magic::initMagics();
-    initLeapers();
+    leapers::initLeapers();
     Zobrist::initialize();
 }
 
@@ -101,21 +101,21 @@ inline u64 generate_attacks(const Board& board)
     u64 attacks = 0ULL;
     const u64 occupancy = board.getOccupancy();
 
-    const u64 pawns = board.getBoard<PieceType::pawn, color>();
-    const u64 knights = board.getBoard<PieceType::knight, color>();
-    const u64 king = board.getBoard<PieceType::king, color>();
+    const u64 bishops = board.getPieces<PieceType::bishop, color>();
+    const u64 rooks = board.getPieces<PieceType::rook, color>();
+    const u64 queens = board.getPieces<PieceType::queen, color>();
 
-    const u64 bishops = board.getBoard<PieceType::bishop, color>();
-    const u64 rooks = board.getBoard<PieceType::rook, color>();
-    const u64 queens = board.getBoard<PieceType::queen, color>();
-
-    attacks |= leapers::getPawnAttackMask<color>(pawns);
-    attacks |= leapers::getKnightAttackMask(knights);
-    attacks |= leapers::getKingAttackMask(king);
+    const u64 pawns = board.getPieces<PieceType::pawn, color>();
+    const u64 knights = board.getPieces<PieceType::knight, color>();
+    const u64 king = board.getPieces<PieceType::king, color>();
 
     attacks |= sliders::getBitboard<PieceType::bishop>(bishops, occupancy);
     attacks |= sliders::getBitboard<PieceType::rook>(rooks, occupancy);
     attacks |= sliders::getBitboard<PieceType::queen>(queens, occupancy);
+
+    attacks |= leapers::getPawnAttackMask<color>(pawns);
+    attacks |= leapers::getKnightAttackMask(knights);
+    attacks |= leapers::getKingAttackMask(king);
 
     DEBUG_END;
     return attacks;

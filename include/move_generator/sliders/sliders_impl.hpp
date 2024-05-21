@@ -11,7 +11,7 @@ void sliders::generateMoves(MoveList& move_list, const Board& board)
 
     const uint64_t occupancy = board.getOccupancy();
     const uint64_t enemy = board.getEnemy<color>();
-    uint64_t pieces = board.getBoard<type, color>();
+    uint64_t pieces = board.getPieces<type, color>();
 
     BIT_LOOP(pieces)
     {

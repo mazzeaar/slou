@@ -10,21 +10,22 @@ void leapers::pawn(MoveList& move_list, const Board& board)
 {
     DEBUG_START;
 
-    static constexpr int OFFSET_MOVE = (utils::isWhite(color)) ? -8 : 8;
-    static constexpr int OFFSET_PUSH = (utils::isWhite(color)) ? -16 : 16;
-    static constexpr int OFFSET_ATTACK_L = (utils::isWhite(color)) ? -7 : 7;
-    static constexpr int OFFSET_ATTACK_R = (utils::isWhite(color)) ? -9 : 9;
+    constexpr bool is_white = utils::isWhite(color);
+    static constexpr int OFFSET_MOVE = (is_white) ? -8 : 8;
+    static constexpr int OFFSET_PUSH = (is_white) ? -16 : 16;
+    static constexpr int OFFSET_ATTACK_L = (is_white) ? -7 : 7;
+    static constexpr int OFFSET_ATTACK_R = (is_white) ? -9 : 9;
 
-    static constexpr uint64_t LEFT_FILE = (utils::isWhite(color)) ? FILE_A : FILE_H;
-    static constexpr uint64_t RIGHT_FILE = (utils::isWhite(color)) ? FILE_H : FILE_A;
-    static constexpr uint64_t PROMO_RANK = (utils::isWhite(color)) ? RANK_7 : RANK_2;
-    static constexpr uint64_t PUSH_RANK = (utils::isWhite(color)) ? RANK_2 : RANK_7;
+    static constexpr uint64_t LEFT_FILE = (is_white) ? FILE_A : FILE_H;
+    static constexpr uint64_t RIGHT_FILE = (is_white) ? FILE_H : FILE_A;
+    static constexpr uint64_t PROMO_RANK = (is_white) ? RANK_7 : RANK_2;
+    static constexpr uint64_t PUSH_RANK = (is_white) ? RANK_2 : RANK_7;
 
     const uint64_t occupancy = board.getOccupancy();
     const uint64_t enemy = board.getEnemy<color>();
     const uint64_t ep_field = board.getEpField();
 
-    const uint64_t pawns = board.getBoard<PieceType::pawn, color>();
+    const uint64_t pawns = board.getPieces<PieceType::pawn, color>();
 
     const uint64_t move_pawns = pawns & ~PROMO_RANK;
     const uint64_t push_pawns = pawns & PUSH_RANK;
@@ -42,7 +43,6 @@ void leapers::pawn(MoveList& move_list, const Board& board)
         LOG_ERROR << "can not have more than 1 piece on the ep_field!\n";
         throw std::runtime_error("can not have more than 1 piece on the ep_field!\n");
     }
-
 
     {
         u64 quiet = pawnMove<color>(move_pawns, occupancy);
@@ -153,7 +153,7 @@ void leapers::knight(MoveList& move_list, const Board& board)
     const uint64_t occupancy = board.getOccupancy();
     const uint64_t enemy = board.getEnemy<color>();
 
-    uint64_t knights = board.getBoard<PieceType::knight, color>();
+    uint64_t knights = board.getPieces<PieceType::knight, color>();
     BIT_LOOP(knights)
     {
         const uint64_t from = get_LSB(knights);
@@ -184,7 +184,7 @@ void leapers::king(MoveList& move_list, const Board& board, u64 enemy_attacks)
     const u64 occupancy = board.getOccupancy();
     const u64 enemy = board.getEnemy<color>();
 
-    u64 king = board.getBoard<PieceType::king, color>();
+    u64 king = board.getPieces<PieceType::king, color>();
     const uint64_t from = get_LSB(king);
 
     u64 moves = king_attacks[from] & ~occupancy & ~enemy_attacks;
@@ -202,12 +202,12 @@ void leapers::king(MoveList& move_list, const Board& board, u64 enemy_attacks)
     }
 
     // TODO: this can be removed through state template
-    if ( board.canCastle(color) ) {
-        if ( board.canCastleKs(color, enemy_attacks) ) {
+    if ( board.canCastle<color>() ) {
+        if ( board.canCastleKs<color>(enemy_attacks) ) {
             move_list.add(Move::make<Move::Flag::castle_k>(from, from + 2));
         }
 
-        if ( board.canCastleQs(color, enemy_attacks) ) {
+        if ( board.canCastleQs<color>(enemy_attacks) ) {
             move_list.add(Move::make<Move::Flag::castle_q>(from, from - 2));
         }
     }
@@ -291,10 +291,10 @@ template <Color color>
 inline u64 leapers::pawnAttackLeft(u64 pawns, u64 enemy)
 {
     if constexpr ( utils::isWhite(color) ) {
-        return north_west(pawns) & enemy;
+        return unsafe_north_west(pawns) & enemy;
     }
     else {
-        return south_east(pawns) & enemy;
+        return unsafe_south_east(pawns) & enemy;
     }
 }
 
@@ -302,9 +302,9 @@ template <Color color>
 inline u64 leapers::pawnAttackRight(u64 pawns, u64 enemy)
 {
     if constexpr ( utils::isWhite(color) ) {
-        return north_east(pawns) & enemy;
+        return unsafe_north_east(pawns) & enemy;
     }
     else {
-        return south_west(pawns) & enemy;
+        return unsafe_south_west(pawns) & enemy;
     }
 }

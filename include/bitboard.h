@@ -57,6 +57,10 @@ inline u64 south(u64 b) { return b >> 8; }
 inline u64 east(u64 b) { return (b & ~FILE_H) << 1; }
 // -1
 inline u64 west(u64 b) { return (b & ~FILE_A) >> 1; }
+// +1
+inline u64 unsafe_east(u64 b) { return b << 1; }
+// -1
+inline u64 unsafe_west(u64 b) { return b >> 1; }
 
 // +7
 inline u64 north_west(u64 b) { return west(north(b)); }
@@ -66,6 +70,15 @@ inline u64 north_east(u64 b) { return east(north(b)); }
 inline u64 south_east(u64 b) { return east(south(b)); }
 // -9
 inline u64 south_west(u64 b) { return west(south(b)); }
+
+// +7
+inline u64 unsafe_north_west(u64 b) { return unsafe_west(north(b)); }
+// +9
+inline u64 unsafe_north_east(u64 b) { return unsafe_east(north(b)); }
+// -7
+inline u64 unsafe_south_east(u64 b) { return unsafe_east(south(b)); }
+// -9
+inline u64 unsafe_south_west(u64 b) { return unsafe_west(south(b)); }
 
 inline u64 extract_next_bit(u64& bb)
 {
@@ -84,7 +97,7 @@ inline constexpr int pop_LSB(u64& b)
 inline u64 pop_lsb_to_u64(u64& b)
 {
     u64 ret = b & -b;       // isolate lsb
-    b &= b - 1;            // remove lsb
+    b &= b - 1;             // remove lsb
     return ret;
 }
 

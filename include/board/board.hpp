@@ -104,7 +104,7 @@ template <Color color>
 inline void Board::remove_piece(Piece piece, int square)
 {
     constexpr int occupancy_index = getIndex<PieceType::none, color>();
-    const int piece_index = getPieceIndex(piece);
+    const int piece_index = getIndex(piece);
     const uint64_t mask = ~single_bit_u64(square);
 
     mailbox[square] = Piece::none;
@@ -117,7 +117,7 @@ template <Color color>
 inline void Board::place_piece(Piece piece, int square)
 {
     constexpr int occupancy_index = getIndex<PieceType::none, color>();
-    const int piece_index = getPieceIndex(piece);
+    const int piece_index = getIndex(piece);
     const uint64_t mask = single_bit_u64(square);
 
     mailbox[square] = piece;
@@ -130,7 +130,7 @@ template <Color color>
 inline void Board::move_piece(Piece piece, int from, int to)
 {
     constexpr int occupancy_index = getIndex<PieceType::none, color>();
-    const int piece_index = getPieceIndex(piece);
+    const int piece_index = getIndex(piece);
 
     const uint64_t from_mask = single_bit_u64(from);
     const uint64_t to_mask = single_bit_u64(to);
@@ -156,12 +156,12 @@ inline void Board::tryToRemoveCastlingRights(const Move& move)
     constexpr Color enemy_color = utils::switchColor(my_color);
 
     if constexpr ( is_capture ) {
-        if ( !canCastle(color) && !canCastle(enemy_color) ) {
+        if ( !canCastle() ) {
             return;
         }
     }
     else {
-        if ( !canCastle(color) ) {
+        if ( !canCastle<color>() ) {
             return;
         }
     }
@@ -181,21 +181,21 @@ inline void Board::tryToRemoveCastlingRights(const Move& move)
         constexpr int enemy_rook_q = (!is_white ? 0 : 56);
 
         if ( to == enemy_rook_k ) {
-            removeCastleKs(enemy_color);
+            removeCastleKs<enemy_color>();
         }
         else if ( to == enemy_rook_q ) {
-            removeCastleQs(enemy_color);
+            removeCastleQs<enemy_color>();
         }
     }
 
     if ( from == my_rook_k ) {
-        removeCastleKs(my_color);
+        removeCastleKs<my_color>();
     }
     else if ( from == my_rook_q ) {
-        removeCastleQs(my_color);
+        removeCastleQs<my_color>();
     }
     else if ( moving_piece == king ) {
-        removeCastle(my_color);
+        removeCastle<my_color>();
     }
 }
 
@@ -225,7 +225,7 @@ void Board::move(const Move& move)
     move_piece<color>(moving_piece, move_from, move_to);
     switch ( move_flag ) {
         case Move::Flag::quiet: {
-            tryToRemoveCastlingRights<color, false>(move);
+            tryToRemoveCastlingRights<my_color, false>(move);
         } break;
         case Move::Flag::pawn_push: {
             const uint64_t new_ep_field = pawn_push_function(1ULL << move_from);
@@ -239,24 +239,23 @@ void Board::move(const Move& move)
             constexpr int rook_to = (utils::isWhite(my_color) ? 5 : 61);
 
             movePiece<PieceType::rook, my_color>(rook_from, rook_to);
-            removeCastle(my_color);
+            removeCastle<my_color>();
         } break;
         case Move::Flag::castle_q: {
             constexpr int rook_from = (utils::isWhite(my_color) ? 0 : 56);
             constexpr int rook_to = (utils::isWhite(my_color) ? 3 : 59);
 
             movePiece<PieceType::rook, my_color>(rook_from, rook_to);
-            removeCastle(my_color);
+            removeCastle<my_color>();
         } break;
         case Move::Flag::capture: {
             remove_piece<enemy_color>(captured_piece, move_to);
             mailbox[move_to] = moving_piece;
 
-            tryToRemoveCastlingRights<color, true>(move);
+            tryToRemoveCastlingRights<my_color, true>(move);
         } break;
         case Move::Flag::ep: {
             constexpr int offset = (utils::isWhite(my_color) ? -8 : 8);
-            //remove_piece<enemy_color>(ep_capture_piece, move_to + offset);
             removePiece<PieceType::pawn, enemy_color>(move_to + offset);
         } break;
         case Move::Flag::promo_n:
@@ -272,7 +271,7 @@ void Board::move(const Move& move)
 
             if ( move.isCapture() ) {
                 remove_piece<enemy_color>(captured_piece, move_to);
-                tryToRemoveCastlingRights<color, true>(move);
+                tryToRemoveCastlingRights<my_color, true>(move);
             }
 
             //remove_piece<my_color>(moving_piece, move_to); // remove the pawn we moved earlier

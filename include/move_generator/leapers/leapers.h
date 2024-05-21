@@ -50,7 +50,21 @@ public:
         return result;
     }
 
+    static inline void initLeapers()
+    {
+        if ( initialized_leapers ) {
+            return;
+        }
 
+        for ( int i = 0; i < 64; ++i ) {
+            white_pawn_attacks[i] = leapers::generatePawnMask<Color::white>(single_bit_u64(i));;
+            black_pawn_attacks[i] = leapers::generatePawnMask<Color::black>(single_bit_u64(i));
+            knight_attacks[i] = leapers::generateKnightMask(single_bit_u64(i));
+            king_attacks[i] = leapers::generateKingMask(single_bit_u64(i));
+        }
+
+        initialized_leapers = true;
+    }
 private:
     template <Color color>
     static inline u64 pawnMove(u64 pawns, u64 occupancy);
@@ -64,21 +78,5 @@ private:
     template <Color color>
     static inline u64 pawnAttackRight(u64 pawns, u64 occupancy);
 };
-
-inline void initLeapers()
-{
-    if ( initialized_leapers ) {
-        return;
-    }
-
-    for ( int i = 0; i < 64; ++i ) {
-        white_pawn_attacks[i] = leapers::generatePawnMask<Color::white>(single_bit_u64(i));;
-        black_pawn_attacks[i] = leapers::generatePawnMask<Color::black>(single_bit_u64(i));
-        knight_attacks[i] = leapers::generateKnightMask(single_bit_u64(i));
-        king_attacks[i] = leapers::generateKingMask(single_bit_u64(i));
-    }
-
-    initialized_leapers = true;
-}
 
 #include "leapers_impl.hpp"
