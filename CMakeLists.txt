@@ -24,13 +24,12 @@ set_target_properties(slou PROPERTIES
 add_custom_target(run
     COMMAND slou
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin
-    COMMENT "Running the chess slou"
+    COMMENT "Running the engine..."
     USES_TERMINAL
 )
 
 # perft test
 add_custom_target(test
-    COMMAND slou -test
-    COMMENT "Running perft tests"
+    COMMAND ../test.sh
     USES_TERMINAL
 )
