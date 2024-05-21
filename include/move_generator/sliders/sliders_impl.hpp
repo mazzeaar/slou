@@ -5,8 +5,6 @@
 template <PieceType type, Color color>
 void sliders::generateMoves(MoveList& move_list, const Board& board)
 {
-    DEBUG_START;
-
     static_assert(type == PieceType::bishop || type == PieceType::rook || type == PieceType::queen);
 
     const uint64_t occupancy = board.getOccupancy();
@@ -32,8 +30,6 @@ void sliders::generateMoves(MoveList& move_list, const Board& board)
             move_list.add(Move::make<Move::Flag::quiet>(from, to));
         }
     }
-
-    DEBUG_END;
 }
 
 template <PieceType type>

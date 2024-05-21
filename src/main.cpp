@@ -5,18 +5,10 @@
 #include <sstream>
 #include <cctype>
 
-#include "move_generator/move_generation.h"
-#include "perft/perft_testing.h"
-#include "game.h"
-
 #include "temp_cmd_manager.h"
-
-#if ENABLE_DEBUG == 1
-DEBUG_INIT;
-#endif
-
+#include "move_generator/move_generation.h"
+#include "game.h"
 #include "config.h"
-#include "debug.h"
 
 void perft_test(const std::vector<std::string>& args);
 void detailed_perft_test(const std::vector<std::string>& args);
@@ -30,11 +22,7 @@ int main(int argc, char** argv)
     initializePrecomputedStuff();
 
     if ( argc > 1 ) {
-        if ( args[1] == "-test" ) {
-            PerftTestSuite perft_tests;
-            perft_tests.runTests();
-        }
-        else if ( args[1] == "-debug" ) {
+        if ( args[1] == "-debug" ) {
             debug_perft(args);
         }
         else if ( args[1] == "-perft" ) {
@@ -58,11 +46,6 @@ int main(int argc, char** argv)
     else {
         uci_interface();
     }
-
-
-#if ENABLE_DEBUG == 1
-    printBenchmarkInfo();
-#endif
 
     return 0;
 }

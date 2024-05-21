@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 
+#include "config.h"
 #include "board/board.h"
 #include "move.h"
 #include "move_generator/move_generation.h"

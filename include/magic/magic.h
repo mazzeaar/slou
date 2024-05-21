@@ -2,7 +2,6 @@
 
 #include "bitboard.h"
 #include "definitions.h"
-#include "log.h"
 
 #include <iostream>
 #include <fstream>

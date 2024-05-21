@@ -1,7 +1,5 @@
 #pragma once
 
-#include "log.h"
-
 #include <cstdint>
 #include <string>
 #include <array>
@@ -228,10 +226,8 @@ namespace utils {
             case 'Q': return Piece::Q;
             case 'K': return Piece::K;
             case ' ': return Piece::none;
+            default: throw std::runtime_error("WRONG CHAR, IMPLEMENT ERROR HANDLING!");
         }
-
-        LOG_ERROR << "char: " << c << '\n';
-        throw std::runtime_error("char to piece failed, char does not exist");
     }
 
     constexpr Color getColor(char c)

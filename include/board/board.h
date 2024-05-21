@@ -7,7 +7,6 @@
 #include "definitions.h"
 #include "bitboard.h"
 #include "move.h"
-#include "debug.h"
 #include "../zobrist.h"
 
 // idea:

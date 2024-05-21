@@ -1,5 +1,4 @@
 #include "leapers.h"
-#include "debug.h"
 
 // ================================
 // MOVE GENERATION FUNCTIONS
@@ -8,8 +7,6 @@
 template <Color color>
 void leapers::pawn(MoveList& move_list, const Board& board)
 {
-    DEBUG_START;
-
     constexpr bool is_white = utils::isWhite(color);
     static constexpr int OFFSET_MOVE = (is_white) ? -8 : 8;
     static constexpr int OFFSET_PUSH = (is_white) ? -16 : 16;
@@ -38,11 +35,6 @@ void leapers::pawn(MoveList& move_list, const Board& board)
     // again, we filter pawns that can not attack to l/r
     const uint64_t promo_capture_l = promotable_pawns & ~LEFT_FILE;
     const uint64_t promo_capture_r = promotable_pawns & ~RIGHT_FILE;
-
-    if ( get_bit_count(ep_field) > 1 ) {
-        LOG_ERROR << "can not have more than 1 piece on the ep_field!\n";
-        throw std::runtime_error("can not have more than 1 piece on the ep_field!\n");
-    }
 
     {
         u64 quiet = pawnMove<color>(move_pawns, occupancy);
@@ -141,15 +133,11 @@ void leapers::pawn(MoveList& move_list, const Board& board)
             move_list.add(Move::make<Move::Flag::promo_x_q>(from, to));
         }
     }
-
-    DEBUG_END;
 }
 
 template <Color color>
 void leapers::knight(MoveList& move_list, const Board& board)
 {
-    DEBUG_START;
-
     const uint64_t occupancy = board.getOccupancy();
     const uint64_t enemy = board.getEnemy<color>();
 
@@ -172,15 +160,11 @@ void leapers::knight(MoveList& move_list, const Board& board)
             move_list.add(Move::make<Move::Flag::capture>(from, to));
         }
     }
-
-    DEBUG_END;
 }
 
 template <Color color>
 void leapers::king(MoveList& move_list, const Board& board, u64 enemy_attacks)
 {
-    DEBUG_START;
-
     const u64 occupancy = board.getOccupancy();
     const u64 enemy = board.getEnemy<color>();
 
@@ -211,8 +195,6 @@ void leapers::king(MoveList& move_list, const Board& board, u64 enemy_attacks)
             move_list.add(Move::make<Move::Flag::castle_q>(from, from - 2));
         }
     }
-
-    DEBUG_END;
 }
 
 // ================================

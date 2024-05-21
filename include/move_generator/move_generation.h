@@ -45,8 +45,6 @@ inline void initializePrecomputedStuff()
 template <Color color>
 inline u64 pseudolegal_moves(MoveList& move_list, const Board& board)
 {
-    DEBUG_START;
-
     const u64 enemy_attacks = generate_attacks<utils::switchColor(color)>(board);
 
     leapers::pawn<color>(move_list, board);
@@ -57,15 +55,12 @@ inline u64 pseudolegal_moves(MoveList& move_list, const Board& board)
     sliders::generateMoves<PieceType::rook, color>(move_list, board);
     sliders::generateMoves<PieceType::queen, color>(move_list, board);
 
-    DEBUG_END;
     return move_list.size();
 }
 
 template <Color color>
 inline u64 generate_moves(MoveList& move_list, Board& board)
 {
-    DEBUG_START;
-
     pseudolegal_moves<color>(move_list, board);
 
     for ( size_t i = 0; i < move_list.size(); ) {
@@ -83,7 +78,6 @@ inline u64 generate_moves(MoveList& move_list, Board& board)
         }
     }
 
-    DEBUG_END;
     return move_list.size();
 }
 
@@ -97,7 +91,6 @@ inline u64 generate_moves(MoveList& move_list, Board& board)
 template <Color color>
 inline u64 generate_attacks(const Board& board)
 {
-    DEBUG_START;
     u64 attacks = 0ULL;
     const u64 occupancy = board.getOccupancy();
 
@@ -117,6 +110,5 @@ inline u64 generate_attacks(const Board& board)
     attacks |= leapers::getKnightAttackMask(knights);
     attacks |= leapers::getKingAttackMask(king);
 
-    DEBUG_END;
     return attacks;
 }

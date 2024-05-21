@@ -1,5 +1,5 @@
 #include "magic/magic.h"
-
+#include "config.h"
 namespace magic {
     void storeMagicsToCppFile(const std::string& name, const std::array<Magic, 64>& magics);
 
@@ -154,7 +154,6 @@ namespace magic {
             used.fill(UNOCCUPIED);
         }
 
-        LOG_ERROR << "Failed to find a valid magic number for square : " << square << ", " << bits << "\n";
         throw std::runtime_error("failed to initialize magics :(");
         return 0ULL; // to make the compiler shut up
     }

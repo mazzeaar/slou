@@ -205,8 +205,6 @@ inline void Board::tryToRemoveCastlingRights(const Move& move)
 template <Color color>
 void Board::move(const Move& move)
 {
-    DEBUG_START;
-
     storeState(move);
     auto state = move_history.top();
 
@@ -283,18 +281,13 @@ void Board::move(const Move& move)
 
     ep_field = 0ULL;
     cur_color = enemy_color;
-
-    DEBUG_END;
 }
 
 template <Color color>
 void Board::undo(const Move& move)
 {
-    DEBUG_START;
-
     if ( move_history.empty() ) {
-        LOG_ERROR << "MOVE HISTORY IS EMPTY!\n";
-        throw std::runtime_error("mh is empty\n");
+        throw std::runtime_error("move history is empty\n");
     }
 
     constexpr bool is_white = utils::isWhite(color);
@@ -362,6 +355,4 @@ void Board::undo(const Move& move)
     else if ( move.isCapture() ) {
         place_piece<enemy_color>(captured_piece, move_to);
     }
-
-    DEBUG_END;
 }
