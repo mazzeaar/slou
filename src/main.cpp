@@ -21,6 +21,7 @@ DEBUG_INIT;
 void perft_test(const std::vector<std::string>& args);
 void detailed_perft_test(const std::vector<std::string>& args);
 void speed_test(const std::vector<std::string>& args);
+void debug_perft(const std::vector<std::string>& args);
 void uci_interface();
 
 int main(int argc, char** argv)
@@ -32,6 +33,9 @@ int main(int argc, char** argv)
         if ( args[1] == "-test" ) {
             PerftTestSuite perft_tests;
             perft_tests.runTests();
+        }
+        else if ( args[1] == "-debug" ) {
+            debug_perft(args);
         }
         else if ( args[1] == "-perft" ) {
             perft_test(args);
@@ -109,7 +113,8 @@ void detailed_perft_test(const std::vector<std::string>& args)
         return;
     }
 
-    game.perftDetailEntry(depth);
+    uint64_t nodes = game.perftDetailEntry(depth);
+    std::cout << "Nodes searched: " << nodes << '\n';
 }
 
 // -perft <depth> ["fen"|startpos] <expected>
@@ -211,4 +216,53 @@ void speed_test(const std::vector<std::string>& args)
     const auto nps = perft_result * 1000 / duration;
 
     std::cout << perft_result << " nodes in " << duration << "ms (" << nps << "nps)\n";
+}
+
+void debug_perft(const std::vector<std::string>& args)
+{
+    const static std::string usage = "-debug <depth> \"fen\" [moves MOVE1 MOVE2 ...]";
+    if ( args.size() < 3 ) {
+        std::cout << "usage: " << usage << '\n';
+        return;
+    }
+
+    int depth = 0;
+    try {
+        depth = std::stoi(args[2]);
+    }
+    catch ( std::exception& e ) {
+        std::cout << "\'depth\' must be a number!\n"
+            << "usage: " << usage << '\n';
+        return;
+    }
+
+    std::string fen = "";
+    for ( unsigned i = 3; i < args.size() && args[i] != "moves"; ++i ) {
+        fen += args[i] + " ";
+    }
+
+    Game game;
+    try {
+        game = Game(fen);
+    }
+    catch ( std::string& e ) {
+        std::cout << e << '\n'
+            << "usage: " << usage << '\n';
+        return;
+    }
+
+    if ( args.size() > 4 ) {
+        if ( args[4] != "moves" ) {
+            std::cout << "usage: " << usage << '\n';
+            return;
+        }
+
+        std::vector<std::string> moves(args.begin() + 5, args.end());
+        for ( const auto& move : moves ) {
+            game.make_move(move);
+        }
+    }
+
+    uint64_t nodes = game.perftDetailEntry(depth);
+    std::cout << '\n' << nodes << '\n';
 }

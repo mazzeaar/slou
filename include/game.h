@@ -27,37 +27,64 @@ public:
 private:
     Move moveFromSring(const std::string& algebraic_move);
 
-    template <Color color, bool print_moves>
+    template <Color color, bool print_moves = false>
     uint64_t perft(Board& board, int depth);
+
+    // for perftree
+    template <Color color, bool print_moves = false>
+    uint64_t debug_perft(Board& board, int depth);
 };
 
 
-template <Color color, bool print_moves = false>
+template <Color color, bool print_moves>
 uint64_t Game::perft(Board& board, int depth)
 {
     MoveList list;
     uint64_t nodes = 0ULL;
 
     generate_moves<color>(list, board);
-    if ( depth <= 1 ) {
+    if ( depth == 1 ) {
         return list.size();
     }
 
     for ( const auto& move : list ) {
         board.move<color>(move);
         if constexpr ( print_moves ) {
-            const uint64_t move_nodes = perft<utils::switchColor(color)>(board, depth - 1);
+            const uint64_t move_nodes = perft<utils::switchColor(color), false>(board, depth - 1);
             nodes += move_nodes;
             std::cout << move.toLongAlgebraic() << ' ' << move_nodes << '\n';
         }
         else {
-            nodes += perft<utils::switchColor(color)>(board, depth - 1);
+            nodes += perft<utils::switchColor(color), false>(board, depth - 1);
         }
         board.undo<color>(move);
     }
 
-    if constexpr ( print_moves ) {
-        std::cout << '\n' << nodes << '\n';
+    return nodes;
+}
+
+template <Color color, bool print_moves>
+uint64_t Game::debug_perft(Board& board, int depth)
+{
+    MoveList list;
+    uint64_t nodes = 0ULL;
+
+    generate_moves<color>(list, board);
+    if ( depth == 0 ) {
+        return 1ULL;
+    }
+
+    for ( const auto& move : list ) {
+        board.move<color>(move);
+        if constexpr ( print_moves ) {
+            const uint64_t move_nodes = perft<utils::switchColor(color), false>(board, depth - 1);
+            nodes += move_nodes;
+            std::cout << move.toLongAlgebraic() << ' ' << move_nodes << '\n';
+        }
+        else {
+            nodes += perft<utils::switchColor(color), false>(board, depth - 1);
+        }
+        board.undo<color>(move);
     }
 
     return nodes;

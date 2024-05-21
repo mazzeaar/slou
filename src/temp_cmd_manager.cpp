@@ -20,8 +20,8 @@ Move CommandManager::makeMoveFromString(const std::string& moveStr, const Board&
 
     // default flag
     Move::Flag flag = Move::Flag::quiet;
-    const PieceType from_piece = board.getPieceTypeFromSquare(from);
-    const PieceType to_piece = board.getPieceTypeFromSquare(to);
+    const PieceType from_piece = board.getPieceType(from);
+    const PieceType to_piece = board.getPieceType(to);
 
     if ( to_piece != PieceType::none ) {
         if ( get_LSB(board.getEpField()) == to ) {

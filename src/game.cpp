@@ -54,10 +54,10 @@ uint64_t Game::perftDetailEntry(int depth)
 {
     constexpr bool print_moves = true;
     if ( board.whiteTurn() ) {
-        return perft<Color::white, print_moves>(board, depth);
+        return debug_perft<Color::white, print_moves>(board, depth);
     }
     else {
-        return perft<Color::black, print_moves>(board, depth);
+        return debug_perft<Color::black, print_moves>(board, depth);
     }
 }
 
@@ -75,8 +75,8 @@ Move Game::moveFromSring(const std::string& algebraic_move)
 
     // default flag
     Move::Flag flag = Move::Flag::quiet;
-    const PieceType from_piece = board.getPieceTypeFromSquare(from);
-    const PieceType to_piece = board.getPieceTypeFromSquare(to);
+    const PieceType from_piece = board.getPieceType(from);
+    const PieceType to_piece = board.getPieceType(to);
 
     if ( to_piece != PieceType::none ) {
         if ( get_LSB(board.getEpField()) == to ) {
