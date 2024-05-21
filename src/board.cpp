@@ -106,12 +106,11 @@ Board::Board(const std::string& fen)
 std::string Board::getFen() const
 {
     std::string res = "";
-    auto mailbox = toCharMailbox();
 
     for ( int j = 7; j >= 0; --j ) {
         int counter = 0;
-        for ( unsigned i = 0; i < mailbox[j].size(); ) {
-            while ( mailbox[j][i] == ' ' ) {
+        for ( unsigned i = 0; i < 8; ) {
+            while ( mailbox[(j * 8) + i] == Piece::none && i < 8 ) {
                 ++counter;
                 ++i;
             }
@@ -121,7 +120,7 @@ std::string Board::getFen() const
                 counter = 0;
             }
             else {
-                res += mailbox[j][i];
+                res += utils::PieceToChar(mailbox[(j * 8) + i]);
                 ++i;
             }
         }
@@ -180,152 +179,28 @@ void Board::storeState(const Move& move)
     state.castling_rights = castling_rights.raw;
 
     move_history.push(state);
-    /*
-    FullState state;
-
-    state.moving_piece = getPiece(move.getFrom());
-
-    if ( move.isCapture() ) {
-        state.captured_piece = getPiece(move.getTo());
-    }
-
-    state.s_color = cur_color;
-    for ( int i = 0; i < 12; ++i ) {
-        state.s_pieces[i] = pieces[i];
-    }
-    state.s_ep_field = ep_field;
-    state.s_castling_rights = castling_rights.raw;
-    move_history.push(state);
-    */
-}
-
-void Board::restoreState()
-{
-    /*
-    FullState state = move_history.top();
-    move_history.pop();
-
-    cur_color = state.s_color;
-    for ( int i = 0; i < 12; ++i ) {
-        pieces[i] = state.s_pieces[i];
-    }
-
-    ep_field = state.s_ep_field;
-    castling_rights.raw = state.s_castling_rights;
-    */
 }
 
 std::string Board::toString() const
 {
-    std::string str = "---------------\n";
+    const std::string BORDER = "+---+---+---+---+---+---+---+---+\n";
+    const std::string VERTICAL_BORDER = "|";
+    const std::string BOTTOM_ROW = "  a   b   c   d   e   f   g   h\n";
+    std::string str = getFen() + "\n";
 
-    for ( int rank = 7; rank >= 0; --rank ) {
-        for ( int file = 0; file < 8; ++file ) {
-            const int square = (rank * 8) + file;
-
-            const Piece piece = getPiece(square);
-            str += utils::PieceToUnicode(piece);
-            str += " ";
+    for ( unsigned rank = 8; rank > 0; --rank ) {
+        str += "\n" + BORDER + VERTICAL_BORDER;
+        const unsigned row_begin = (rank - 1) * 8;
+        for ( unsigned square = row_begin; square < row_begin + 8; ++square ) {
+            str += ' ';
+            str += utils::PieceToChar(mailbox[square]);;
+            str += " " + VERTICAL_BORDER;
         }
 
-        str += "\n";
+        str += " " + std::to_string(rank);
     }
 
-    return str + "---------------\n";
-}
-
-std::string Board::toPrettyString(bool colored, bool emoji) const
-{
-    const std::string BORDER = "  +---+---+---+---+---+---+---+---+\n";
-    const char VERTICAL_BORDER = '|';
-
-
-    auto mailbox = toStringMailbox(emoji);
-    std::string str = "\n    a   b   c   d   e   f   g   h\n"; // Column labels
-
-    bool white_cell = true;
-    int rank = 8;
-    for ( int i = mailbox.size() - 1; i >= 0; --i ) {
-        const auto& row = mailbox[i];
-        str += BORDER;
-        str += std::to_string(rank) + " " + VERTICAL_BORDER;
-
-        for ( const auto& s : row ) {
-            if ( colored && white_cell ) {
-                str += WHITE_BG;
-            }
-            white_cell = !white_cell;
-
-            str += " " + s + " " + RESET + VERTICAL_BORDER;
-
-        }
-
-        str += " " + std::to_string(rank--);
-
-        // swap white bg
-        white_cell = !white_cell;
-
-        str += "    ";
-
-
-        switch ( i ) {
-            case 7: {
-                str += "Position: " + getFen();
-            } break;
-            case 6: {
-                str += "Turn: ";
-                str += (utils::isWhite(cur_color)) ? "white" : "black";
-            } break;
-            case 5: {
-                str += "Eval: TODO";
-            } break;
-            case 4: {
-                str += "HMC/FMC: TODO";
-            }
-        }
-
-        str += "\n";
-    }
-
-    str += BORDER; // Add the final horizontal border
-    str += "    a   b   c   d   e   f   g   h\n"; // Column labels
+    str += "\n" + BORDER + BOTTOM_ROW;
 
     return str;
-}
-
-std::vector<std::vector<char>> Board::toCharMailbox() const
-{
-    std::vector<std::vector<char>> mailbox = std::vector<std::vector<char>>(8, std::vector<char>(8, ' '));
-
-    for ( int rank = 7; rank >= 0; --rank ) {
-        for ( int file = 0; file < 8; ++file ) {
-            const int square = (rank * 8) + file;
-            const Piece piece = getPiece(square);
-            mailbox[rank][file] = utils::PieceToChar(piece);
-        }
-    }
-
-    return mailbox;
-}
-
-std::vector<std::vector<std::string>> Board::toStringMailbox(bool emoji) const
-{
-    std::vector<std::vector<std::string>> mailbox = std::vector<std::vector<std::string>>(8, std::vector<std::string>(8, " "));
-
-    for ( int rank = 7; rank >= 0; --rank ) {
-        for ( int file = 0; file < 8; ++file ) {
-            const int square = (rank * 8) + file;
-
-            const Piece piece = getPiece(square);
-
-            if ( emoji ) {
-                mailbox[rank][file] = utils::PieceToUnicode(piece);
-            }
-            else {
-                mailbox[rank][file] = utils::PieceToChar(piece);
-            }
-        }
-    }
-
-    return mailbox;
 }

@@ -315,10 +315,6 @@ public:
         removeCastleQs<color>();
     }
 
-
-
-
-
     template <Color color>
     inline void remove_piece(Piece piece, int square);
 
@@ -341,8 +337,6 @@ public:
     constexpr void placePiece(uint64_t square);
 
     std::string toString() const;
-    std::string toPrettyString(bool colored = false, bool emoji = true) const;
-
 private:
 
     void storeState(const Move& move);
@@ -352,9 +346,6 @@ private:
 
     template <Color color, bool is_capture>
     inline void tryToRemoveCastlingRights(const Move& move);
-
-    std::vector<std::vector<char>> toCharMailbox() const;
-    std::vector<std::vector<std::string>> toStringMailbox(bool emoji = false) const;
 };
 
 #include "board.hpp"

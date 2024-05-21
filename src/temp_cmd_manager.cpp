@@ -165,7 +165,7 @@ void CommandManager::parseCommand()
             std::cout << "readyok\n";
         }
         else if ( token == "print" || token == "d" ) {
-            std::cout << board.toPrettyString(false, false) << '\n';
+            std::cout << board.toString() << '\n';
         }
         else {
             std::cout << "unknown command: " << token << '\n';
