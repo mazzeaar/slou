@@ -35,8 +35,8 @@ namespace Zobrist {
         uint64_t hash = 0;
 
         for ( int square = 0; square < kNumSquares; ++square ) {
-            int piece_id = board.getPieceIndex(board.getPieceFromSquare(square));
-            if ( piece_id != board.getPieceIndex(Piece::none) ) {
+            int piece_id = board.getIndex(board.getPiece(square));
+            if ( piece_id != board.getIndex(Piece::none) ) {
                 hash ^= pieceKeys[piece_id][square];
             }
         }
@@ -45,10 +45,10 @@ namespace Zobrist {
             hash ^= blackToMove;
         }
 
-        if ( board.canCastleKs(Color::white) ) hash ^= castlingKeys[0];
-        if ( board.canCastleQs(Color::white) ) hash ^= castlingKeys[1];
-        if ( board.canCastleKs(Color::black) ) hash ^= castlingKeys[2];
-        if ( board.canCastleQs(Color::black) ) hash ^= castlingKeys[3];
+        if ( board.canCastleKs<Color::white>() ) hash ^= castlingKeys[0];
+        if ( board.canCastleQs<Color::white>() ) hash ^= castlingKeys[1];
+        if ( board.canCastleKs<Color::black>() ) hash ^= castlingKeys[2];
+        if ( board.canCastleQs<Color::black>() ) hash ^= castlingKeys[3];
 
         if ( board.getEpField() != 0ULL ) {
             hash ^= enPassantKeys[get_LSB(board.getEpField())];
@@ -59,13 +59,13 @@ namespace Zobrist {
 
     uint64_t updateHash(uint64_t hash, const Move& move, const Board& board)
     {
-        int piece_id = board.getPieceIndex(board.getPieceFromSquare(move.getFrom()));
+        int piece_id = board.getIndex(board.getPiece(move.getFrom()));
         hash ^= pieceKeys[piece_id][move.getFrom()];
         hash ^= pieceKeys[piece_id][move.getTo()];
 
 
         if ( move.isCapture() ) {
-            int captured_piece_id = board.getPieceIndex(board.getPieceFromSquare(move.getTo()));
+            int captured_piece_id = board.getIndex(board.getPiece(move.getTo()));
             hash ^= pieceKeys[captured_piece_id][move.getTo()];
         }
 
@@ -81,17 +81,17 @@ namespace Zobrist {
                 rook_to = (board.whiteTurn()) ? 3 : 59;
             }
 
-            int rook_id = board.getPieceIndex(board.getPieceFromSquare(rook_from));
+            int rook_id = board.getIndex(board.getPiece(rook_from));
             hash ^= pieceKeys[rook_id][rook_from];
             hash ^= pieceKeys[rook_id][rook_to];
         }
         else if ( move.getFlag() == Move::Flag::ep ) {
             int ep_square = (board.whiteTurn()) ? move.getTo() - 8 : move.getTo() + 8;
-            int captured_piece_id = board.getPieceIndex(board.getPieceFromSquare(ep_square));
+            int captured_piece_id = board.getIndex(board.getPiece(ep_square));
             hash ^= pieceKeys[captured_piece_id][ep_square];
         }
         else if ( move.isPromotion() ) {
-            int promo_id = board.getPieceIndex(utils::getPiece(move.getPromotionPieceType(), board.whiteTurn() ? Color::white : Color::black));
+            int promo_id = board.getIndex(utils::getPiece(move.getPromotionPieceType(), board.whiteTurn() ? Color::white : Color::black));
             hash ^= pieceKeys[promo_id][move.getTo()];
         }
 
@@ -100,10 +100,10 @@ namespace Zobrist {
 
         // Update castling rights
         if ( move.isCastle() ) {
-            if ( board.canCastleKs(Color::white) ) hash ^= castlingKeys[0];
-            if ( board.canCastleQs(Color::white) ) hash ^= castlingKeys[1];
-            if ( board.canCastleKs(Color::black) ) hash ^= castlingKeys[2];
-            if ( board.canCastleQs(Color::black) ) hash ^= castlingKeys[3];
+            if ( board.canCastleKs<Color::white>() ) hash ^= castlingKeys[0];
+            if ( board.canCastleQs<Color::white>() ) hash ^= castlingKeys[1];
+            if ( board.canCastleKs<Color::black>() ) hash ^= castlingKeys[2];
+            if ( board.canCastleQs<Color::black>() ) hash ^= castlingKeys[3];
         }
 
         // Update en passant

@@ -73,13 +73,13 @@ Board::Board(const std::string& fen)
                 }
 
                 if ( token.find('K') == std::string::npos )
-                    removeCastleKs(Color::white);
+                    castling_rights.white_ks = 0;
                 if ( token.find('Q') == std::string::npos )
-                    removeCastleQs(Color::white);
+                    castling_rights.white_qs = 0;
                 if ( token.find('k') == std::string::npos )
-                    removeCastleKs(Color::black);
+                    castling_rights.black_ks = 0;
                 if ( token.find('q') == std::string::npos )
-                    removeCastleQs(Color::black);
+                    castling_rights.black_qs = 0;
             } break;
             case 2: { // ep target
                 if ( token != "-" ) {
@@ -141,10 +141,10 @@ std::string Board::getFen() const
     }
 
     std::string castling = "";
-    if ( canCastleKs(Color::white) ) castling += "K";
-    if ( canCastleQs(Color::white) ) castling += "Q";
-    if ( canCastleKs(Color::black) ) castling += "k";
-    if ( canCastleQs(Color::black) ) castling += "q";
+    if ( canCastleKs<Color::white>() ) castling += "K";
+    if ( canCastleQs<Color::white>() ) castling += "Q";
+    if ( canCastleKs<Color::black>() ) castling += "k";
+    if ( canCastleQs<Color::black>() ) castling += "q";
     if ( castling == "" ) {
         res += "- ";
     }
@@ -170,10 +170,10 @@ void Board::storeState(const Move& move)
 {
     MoveState state;
 
-    state.moving_piece = getPieceFromSquare(move.getFrom());
+    state.moving_piece = getPiece(move.getFrom());
 
     if ( move.isCapture() ) {
-        state.captured_piece = getPieceFromSquare(move.getTo());
+        state.captured_piece = getPiece(move.getTo());
     }
 
     state.ep_field_before = getEpField();
@@ -183,10 +183,10 @@ void Board::storeState(const Move& move)
     /*
     FullState state;
 
-    state.moving_piece = getPieceFromSquare(move.getFrom());
+    state.moving_piece = getPiece(move.getFrom());
 
     if ( move.isCapture() ) {
-        state.captured_piece = getPieceFromSquare(move.getTo());
+        state.captured_piece = getPiece(move.getTo());
     }
 
     state.s_color = cur_color;
@@ -223,7 +223,7 @@ std::string Board::toString() const
         for ( int file = 0; file < 8; ++file ) {
             const int square = (rank * 8) + file;
 
-            const Piece piece = getPieceFromSquare(square);
+            const Piece piece = getPiece(square);
             str += utils::PieceToUnicode(piece);
             str += " ";
         }
@@ -300,7 +300,7 @@ std::vector<std::vector<char>> Board::toCharMailbox() const
     for ( int rank = 7; rank >= 0; --rank ) {
         for ( int file = 0; file < 8; ++file ) {
             const int square = (rank * 8) + file;
-            const Piece piece = getPieceFromSquare(square);
+            const Piece piece = getPiece(square);
             mailbox[rank][file] = utils::PieceToChar(piece);
         }
     }
@@ -316,7 +316,7 @@ std::vector<std::vector<std::string>> Board::toStringMailbox(bool emoji) const
         for ( int file = 0; file < 8; ++file ) {
             const int square = (rank * 8) + file;
 
-            const Piece piece = getPieceFromSquare(square);
+            const Piece piece = getPiece(square);
 
             if ( emoji ) {
                 mailbox[rank][file] = utils::PieceToUnicode(piece);
