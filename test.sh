@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# DISCLAIMER
+# i dont really know bash, so i implemented the basic idea and let gpt4o
+# guide me to the solution that i wanted. it was annoying, hard and the result is probably implemented terribly,
+# but it works and thats all i needed :)
+
 # formatted as "DEPTH FEN EXPECTED"
 tests=(
     "6 8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1 824064"
@@ -193,7 +198,6 @@ store_failed_test() {
 echo "--------------------------------------"
 echo "Running perft tests for $NAME:"
 echo "--------------------------------------"
-
 for test in "${tests[@]}"; do
     # extract the parameters from the testcase
     depth=$(echo $test | awk '{print $1}')                                  # first whitespace split
@@ -234,7 +238,6 @@ total_time_ms=$(echo "scale=6; $total_time / 1000000" | bc)     # convert from n
 total_time_s=$(echo "scale=9; $total_time / 1000000000" | bc)   # convert from ns to s for nps
 nps=$(echo "scale=2; $total_nodes / $total_time_s" | bc)        
 
-
 # add thousand separator: 1000 -> 1,000
 add_separators() { 
     echo "$1" | awk '{printf "%'\''d\n", $0}'
@@ -244,6 +247,8 @@ total_nodes=$(add_separators "$total_nodes")
 nps=$(add_separators "$nps")    
 
 time=$(echo $(echo $total_time_s \* 1000 | bc) | awk -F'.' '{print $1}')    # remove decimal places
+
+# print the test results
 echo "--------------------------------------"
 printf "$FORMAT_RESULTS\n" "Passed:" "$passed_count/$total_tests"
 if (( failed_count > 0 )); then
@@ -255,6 +260,7 @@ printf "$FORMAT_RESULTS\n" "Nodes:" "$total_nodes"
 printf "$FORMAT_RESULTS\n" "NPS:" "$nps"
 echo "--------------------------------------"
 
+# only print this if we failed something
 if (( failed_count > 0 )); then
     echo "Failed Tests:"
     printf "$FORMAT_PRINT\n" "Depth" "Expected" "Output" "FEN"
