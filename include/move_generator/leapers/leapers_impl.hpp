@@ -26,35 +26,31 @@ void leapers::pawn(MoveList& move_list, const Board& board)
 
     const uint64_t move_pawns = pawns & ~PROMO_RANK;
     const uint64_t push_pawns = pawns & PUSH_RANK;
+    const uint64_t promotable_pawns = pawns & PROMO_RANK;
 
     // filter pawns that can not attack to l/r, this way we dont have to do bit 'teleportation' check
     const uint64_t attack_pawns_l = pawns & ~PROMO_RANK & ~LEFT_FILE;
     const uint64_t attack_pawns_r = pawns & ~PROMO_RANK & ~RIGHT_FILE;
 
-    const uint64_t promotable_pawns = pawns & PROMO_RANK;
     // again, we filter pawns that can not attack to l/r
     const uint64_t promo_capture_l = promotable_pawns & ~LEFT_FILE;
     const uint64_t promo_capture_r = promotable_pawns & ~RIGHT_FILE;
 
+    uint64_t quiet = pawnMove<color>(move_pawns, occupancy);
+    BIT_LOOP(quiet)
     {
-        u64 quiet = pawnMove<color>(move_pawns, occupancy);
-        BIT_LOOP(quiet)
-        {
-            const uint64_t to = get_LSB(quiet);
-            const uint64_t from = to + OFFSET_MOVE;
-            move_list.add(Move::make<Move::Flag::quiet>(from, to));
-        }
+        const uint64_t to = get_LSB(quiet);
+        const uint64_t from = to + OFFSET_MOVE;
+        move_list.add(Move::make<Move::Flag::quiet>(from, to));
     }
 
 
+    uint64_t push = pawnPush<color>(push_pawns, occupancy);
+    BIT_LOOP(push)
     {
-        u64 push = pawnPush<color>(push_pawns, occupancy);
-        BIT_LOOP(push)
-        {
-            const uint64_t to = get_LSB(push);
-            const uint64_t from = to + OFFSET_PUSH;
-            move_list.add(Move::make<Move::Flag::pawn_push>(from, to));
-        }
+        const uint64_t to = get_LSB(push);
+        const uint64_t from = to + OFFSET_PUSH;
+        move_list.add(Move::make<Move::Flag::pawn_push>(from, to));
     }
 
 
@@ -163,37 +159,34 @@ void leapers::knight(MoveList& move_list, const Board& board)
 }
 
 template <Color color>
-void leapers::king(MoveList& move_list, const Board& board, u64 enemy_attacks)
+void leapers::king(MoveList& move_list, const Board& board, uint64_t enemy_attacks)
 {
-    const u64 occupancy = board.getOccupancy();
-    const u64 enemy = board.getEnemy<color>();
+    const uint64_t occupancy = board.getOccupancy();
+    const uint64_t enemy = board.getEnemy<color>();
 
-    u64 king = board.getPieces<PieceType::king, color>();
+    uint64_t king = board.getPieces<PieceType::king, color>();
     const uint64_t from = get_LSB(king);
 
-    u64 moves = king_attacks[from] & ~occupancy & ~enemy_attacks;
+    uint64_t moves = king_attacks[from] & ~occupancy & ~enemy_attacks;
     BIT_LOOP(moves)
     {
         const uint64_t to = get_LSB(moves);
         move_list.add(Move::make<Move::Flag::quiet>(from, to));
     }
 
-    u64 attacks = king_attacks[from] & enemy;
+    uint64_t attacks = king_attacks[from] & enemy;
     BIT_LOOP(attacks)
     {
         const uint64_t to = get_LSB(attacks);
         move_list.add(Move::make<Move::Flag::capture>(from, to));
     }
 
-    // TODO: this can be removed through state template
-    if ( board.canCastle<color>() ) {
-        if ( board.canCastleKs<color>(enemy_attacks) ) {
-            move_list.add(Move::make<Move::Flag::castle_k>(from, from + 2));
-        }
+    if ( board.canCastleKs<color>(enemy_attacks) ) {
+        move_list.add(Move::make<Move::Flag::castle_k>(from, from + 2));
+    }
 
-        if ( board.canCastleQs<color>(enemy_attacks) ) {
-            move_list.add(Move::make<Move::Flag::castle_q>(from, from - 2));
-        }
+    if ( board.canCastleQs<color>(enemy_attacks) ) {
+        move_list.add(Move::make<Move::Flag::castle_q>(from, from - 2));
     }
 }
 
@@ -201,54 +194,54 @@ void leapers::king(MoveList& move_list, const Board& board, u64 enemy_attacks)
 // MASK GENERATORS
 // ================================
 
-inline u64 leapers::generateKingMask(u64 king)
+inline uint64_t leapers::generateKingMask(uint64_t king)
 {
-    const u64 up = north_west(king) | north(king) | north_east(king);
-    const u64 down = south_west(king) | south(king) | south_east(king);
-    const u64 left = west(king);
-    const u64 right = east(king);
+    const uint64_t up = north_west(king) | north(king) | north_east(king);
+    const uint64_t down = south_west(king) | south(king) | south_east(king);
+    const uint64_t left = west(king);
+    const uint64_t right = east(king);
 
     return up | down | left | right;
 }
 
-inline u64 leapers::generateKnightMask(u64 knights)
+inline uint64_t leapers::generateKnightMask(uint64_t knights)
 {
-    const u64 up_left = ((knights & ~(RANK_78 | FILE_A)) << 15);
-    const u64 up_right = ((knights & ~(RANK_78 | FILE_H)) << 17);
-    const u64 up = up_left | up_right;
+    const uint64_t up_left = ((knights & ~(RANK_78 | FILE_A)) << 15);
+    const uint64_t up_right = ((knights & ~(RANK_78 | FILE_H)) << 17);
+    const uint64_t up = up_left | up_right;
 
-    const u64 down_left = ((knights & ~(RANK_12 | FILE_A)) >> 17);
-    const u64 down_right = ((knights & ~(RANK_12 | FILE_H)) >> 15);
-    const u64 down = down_left | down_right;
+    const uint64_t down_left = ((knights & ~(RANK_12 | FILE_A)) >> 17);
+    const uint64_t down_right = ((knights & ~(RANK_12 | FILE_H)) >> 15);
+    const uint64_t down = down_left | down_right;
 
-    const u64 right_up = ((knights & ~(FILE_GH | RANK_8)) << 10);
-    const u64 right_down = ((knights & ~(FILE_GH | RANK_1)) >> 6);
-    const u64 right = right_up | right_down;
+    const uint64_t right_up = ((knights & ~(FILE_GH | RANK_8)) << 10);
+    const uint64_t right_down = ((knights & ~(FILE_GH | RANK_1)) >> 6);
+    const uint64_t right = right_up | right_down;
 
-    const u64 left_up = ((knights & ~(FILE_AB | RANK_8)) << 6);
-    const u64 left_down = ((knights & ~(FILE_AB | RANK_1)) >> 10);
-    const u64 left = left_up | left_down;
+    const uint64_t left_up = ((knights & ~(FILE_AB | RANK_8)) << 6);
+    const uint64_t left_down = ((knights & ~(FILE_AB | RANK_1)) >> 10);
+    const uint64_t left = left_up | left_down;
 
     return up | down | left | right;
 }
 
 template <Color color>
-inline u64 leapers::generatePawnMask(u64 pawns)
+inline uint64_t leapers::generatePawnMask(uint64_t pawns)
 {
     if constexpr ( utils::isWhite(color) ) {
-        const u64 left = north_west(pawns);
-        const u64 right = north_east(pawns);
+        const uint64_t left = north_west(pawns);
+        const uint64_t right = north_east(pawns);
         return (left | right);
     }
     else {
-        const u64 left = south_west(pawns);
-        const u64 right = south_east(pawns);
+        const uint64_t left = south_west(pawns);
+        const uint64_t right = south_east(pawns);
         return (left | right);
     }
 }
 
 template <Color color>
-inline u64 leapers::pawnMove(u64 pawns, u64 occupancy)
+inline uint64_t leapers::pawnMove(uint64_t pawns, uint64_t occupancy)
 {
     if constexpr ( utils::isWhite(color) ) {
         return north(pawns) & ~occupancy;
@@ -259,7 +252,7 @@ inline u64 leapers::pawnMove(u64 pawns, u64 occupancy)
 }
 
 template <Color color>
-inline u64 leapers::pawnPush(u64 pawns, u64 occupancy)
+inline uint64_t leapers::pawnPush(uint64_t pawns, uint64_t occupancy)
 {
     if constexpr ( utils::isWhite(color) ) {
         return north(north(pawns & RANK_2) & ~occupancy) & ~occupancy;
@@ -270,7 +263,7 @@ inline u64 leapers::pawnPush(u64 pawns, u64 occupancy)
 }
 
 template <Color color>
-inline u64 leapers::pawnAttackLeft(u64 pawns, u64 enemy)
+inline uint64_t leapers::pawnAttackLeft(uint64_t pawns, uint64_t enemy)
 {
     if constexpr ( utils::isWhite(color) ) {
         return unsafe_north_west(pawns) & enemy;
@@ -281,7 +274,7 @@ inline u64 leapers::pawnAttackLeft(u64 pawns, u64 enemy)
 }
 
 template <Color color>
-inline u64 leapers::pawnAttackRight(u64 pawns, u64 enemy)
+inline uint64_t leapers::pawnAttackRight(uint64_t pawns, uint64_t enemy)
 {
     if constexpr ( utils::isWhite(color) ) {
         return unsafe_north_east(pawns) & enemy;
