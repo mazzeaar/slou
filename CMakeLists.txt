@@ -32,4 +32,5 @@ add_custom_target(run
 add_custom_target(test
     COMMAND ../test.sh
     USES_TERMINAL
+    DEPENDS slou
 )

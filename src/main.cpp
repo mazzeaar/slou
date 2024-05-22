@@ -151,11 +151,7 @@ void perft_test(const std::vector<std::string>& args)
             std::cout << GREEN << "passed: " << RESET << perft_result << '\n';
         }
         else {
-            std::cout << RED << "failed: " << RESET << std::left << std::setw(10) << expected
-                << std::left << std::setw(10) << perft_result
-                << std::left << std::setw(10) << " "
-                << "input: " << "-perft " << depth << " " << fen << " " << expected
-                << '\n';
+            std::cout << RED << "failed: " << RESET << perft_result << '\n';
         }
     }
 }

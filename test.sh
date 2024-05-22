@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # formatted as "DEPTH FEN EXPECTED"
 tests=(
     "6 8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1 824064"
@@ -158,33 +160,111 @@ NAME="slou"
 ENGINE="$(dirname "$0")/bin/$NAME"
 COMMAND="-perft"
 
-passed_count=0
-failed_count=0
-total_count=0
+FORMAT_PRINT="%-10s %-15s %-15s %s"
+FORMAT_RESULTS="%-10s %-10s"
 
-echo "Running tests for $NAME:"
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'    # reset
+PROGRESS_BLOCK='#'
+
+failed_tests=()
+total_tests=${#tests[@]}
+
+passed_count=0  # #n passed tests
+failed_count=0  # #n failed tests
+test_count=0    # #n tests, for progress bar
+
+total_time=0
+total_nodes=0
+
+# way to store the failed test in a formatted way for nicer printing later on
+store_failed_test() {
+    local depth=$1
+    local fen=$2
+    local expected=$3
+    local output=$4
+
+    local actual_output=$(echo "$output" | awk '{print $NF}') # extract the output behind the whitespace
+    printf -v formatted "$FORMAT_PRINT" "$depth" "$expected" "$actual_output" "$fen"
+    failed_tests+=("$formatted")
+}
+
+echo "--------------------------------------"
+echo "Running perft tests for $NAME:"
+echo "--------------------------------------"
+
 for test in "${tests[@]}"; do
     # extract the parameters from the testcase
-    depth=$(echo $test | awk '{print $1}')                          # first whitespace split
-    expected=$(echo $test | awk '{print $NF}')                      # middle part
-    fen=$(echo $test | awk '{$1=""; $NF=""; print $0}' | xargs)     # last whitespace split
+    depth=$(echo $test | awk '{print $1}')                                  # first whitespace split
+    expected=$(echo $test | awk '{print $NF}')                              # middle part
+    fen=$(echo $test | awk '{$1=""; $NF=""; print $0}' | xargs)             # last whitespace split
 
-    # run tests and capture output
-    output=$($ENGINE $COMMAND "$depth" "$fen" "$expected")
+    # run the test and measure the execution time in ns
+    start=$(gdate +%s%N)
+    output=$($ENGINE $COMMAND "$depth" "$fen" "$expected" 2>&1)             # run the testcase
+    end=$(gdate +%s%N)
+    total_time=$(echo "$total_time + $(echo "$end - $start" | bc)" | bc)    # accumulate the duration to the total
 
-    total_count=$((total_count + 1))
-    if echo "$output" | grep "passed: "; then
+    # extract the amount of nodes that was printed
+    nodes_line=$(echo "$output" | grep -E "passed:|failed:")
+    # here we convert the nodes to a numerical value, idk why but thats the only way i got it to work
+    nodes=$((10#$(echo "$(echo "$nodes_line" | awk '{print $2}')" | tr -cd '[:digit:]')))
+    total_nodes=$(echo "$total_nodes + $nodes" | bc)                        
+
+    if echo "$output" | grep "passed: " >/dev/null; then
+        # print a green symbol if the test passed
         passed_count=$((passed_count + 1))
+        echo -ne "${GREEN}$PROGRESS_BLOCK${NC}"
     else
+        # store the failed test and print a red symbol
         failed_count=$((failed_count + 1))
-    fi 
+        store_failed_test "$depth" "$fen" "$expected" "$output"
+        echo -ne "${RED}$PROGRESS_BLOCK${NC}"
+    fi
+
+    if (( (test_count + 1) % 38 == 0 ))  ; then
+        echo ""
+    fi
+
+    test_count=$((test_count + 1))
 done
 
-echo "================"
-echo "Summary:"
-echo "Passed:  $passed_count/$total_count"
-echo "Failed:  $failed_count/$total_count"
-echo "================"
+total_time_ms=$(echo "scale=6; $total_time / 1000000" | bc)     # convert from ns to ms for duration
+total_time_s=$(echo "scale=9; $total_time / 1000000000" | bc)   # convert from ns to s for nps
+nps=$(echo "scale=2; $total_nodes / $total_time_s" | bc)        
+
+
+# add thousand separator: 1000 -> 1,000
+add_separators() { 
+    echo "$1" | awk '{printf "%'\''d\n", $0}'
+}
+
+total_nodes=$(add_separators "$total_nodes")
+nps=$(add_separators "$nps")    
+
+time=$(echo $(echo $total_time_s \* 1000 | bc) | awk -F'.' '{print $1}')    # remove decimal places
+echo "--------------------------------------"
+printf "$FORMAT_RESULTS\n" "Passed:" "$passed_count/$total_tests"
+if (( failed_count > 0 )); then
+    printf "$FORMAT_RESULTS\n" "Failed:" "$failed_count/$total_tests"
+fi
+echo "--------------------------------------"
+printf "$FORMAT_RESULTS\n" "Duration:" "$(echo $time)ms"
+printf "$FORMAT_RESULTS\n" "Nodes:" "$total_nodes"
+printf "$FORMAT_RESULTS\n" "NPS:" "$nps"
+echo "--------------------------------------"
+
+if (( failed_count > 0 )); then
+    echo "Failed Tests:"
+    printf "$FORMAT_PRINT\n" "Depth" "Expected" "Output" "FEN"
+    echo "--------------------------------------"
+    for failed_test in "${failed_tests[@]}"; do
+        echo "$failed_test"
+    done
+    echo "--------------------------------------"
+fi
+
 exit
 
 # those are kinda slow, so i disabled them for now
