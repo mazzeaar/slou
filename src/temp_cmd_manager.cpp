@@ -110,7 +110,7 @@ void CommandManager::parseCommand()
                 << "uciok\n";
         }
         else if ( token == "stop" ) {
-            quit = true;
+            //quit = true;
         }
         else if ( token == "position" ) {
             ss >> token;
@@ -132,33 +132,44 @@ void CommandManager::parseCommand()
             }
 
             if ( token == "moves" ) {
-                if ( board.whiteTurn() ) {
-                    while ( ss >> token ) {
-                        auto mv = makeMoveFromString(token, board);
-                        std::cout << "move: " << token << '\n';
+                while ( ss >> token ) {
+                    auto mv = makeMoveFromString(token, board);
+                    if ( board.whiteTurn() ) {
                         board.move<Color::white>(mv);
                     }
-                }
-                else {
-                    while ( ss >> token ) {
-                        auto mv = makeMoveFromString(token, board);
-                        std::cout << "move: " << token << '\n';
+                    else {
                         board.move<Color::black>(mv);
                     }
                 }
             }
         }
         else if ( token == "go" ) {
-            ss >> token;
-            if ( token == "perft" ) {
-                ss >> token;
-                int depth = std::stoi(token);
-                if ( board.whiteTurn() ) {
-                    perft_entry<Color::white>(board, depth);
+            if ( ss >> token ) {
+                if ( token == "perft" ) {
+                    ss >> token;
+                    int depth = std::stoi(token);
+                    if ( board.whiteTurn() ) {
+                        perft_entry<Color::white>(board, depth);
+                    }
+                    else {
+                        perft_entry<Color::white>(board, depth);
+                    }
                 }
                 else {
-                    perft_entry<Color::white>(board, depth);
+                    goto here;
                 }
+            }
+            else {
+            here:
+                Move best_move;
+                if ( board.whiteTurn() ) {
+                    best_move = getBestMove<Color::white>(board);
+                }
+                else {
+                    best_move = getBestMove<Color::black>(board);
+                }
+
+                std::cout << "bestmove " << best_move.toLongAlgebraic() << '\n';
             }
         }
         else if ( token == "isready" ) {
@@ -166,6 +177,9 @@ void CommandManager::parseCommand()
         }
         else if ( token == "print" || token == "d" ) {
             std::cout << board.toString() << '\n';
+        }
+        else if ( token == "ucinewgame" ) {
+            // do nothing
         }
         else {
             std::cout << "unknown command: " << token << '\n';

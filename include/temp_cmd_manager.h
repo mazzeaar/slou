@@ -7,6 +7,7 @@
 #include "board/board.h"
 #include "move.h"
 #include "move_generator/move_generation.h"
+#include "eval.h"
 
 template <Color color>
 u64 perft(Board& board, int depth)

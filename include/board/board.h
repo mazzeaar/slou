@@ -9,29 +9,6 @@
 #include "move.h"
 #include "../zobrist.h"
 
-// idea:
-
-struct CompactState {
-    // this will be a minimal state, can be used to restore unrecoverable information
-};
-struct BoardState {
-    // state stuff like bitboards castling hmc etc
-
-    // question: can the state be stored as an object:
-    // State<color_to_play, has_ep_field, 4 x bool for castlingrights>();?
-    // if yes: can i store such an oject in or on my board state and then pass the state to other functions?
-    // this way i could do a lot at compiletime and i would have to check if i can caslte, because the template will have removed it already :D
-
-    // this will need explicit instantiations of all comobinations:
-    // so 2^6 combinations, for BoardState and for generateMoves as well, maybe other functions too
-    CompactState storeState() const;
-
-    // we restore the state using the previous move and the minimal previous state
-    void restoreState(const CompactState& prev, const Move& move);
-
-    // print functions can also be here, maybe templated castling rights?
-};
-
 struct MoveState {
     uint64_t ep_field_before = 0ULL;
     char castling_rights = 0x00;

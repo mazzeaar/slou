@@ -21,8 +21,8 @@ enum Directions {
 #define set_bit(b, i)       ((b) |= single_bit_u64(i))
 #define get_bit(b, i)       ((b) & (1ULL << (i)))
 #define clear_bit(b, i)     ((b) &= ~(1ULL << (i)))
-#define get_LSB(b)          (__builtin_ctzll(b))
-#define get_bit_count(b)    (__builtin_popcountll(b))
+#define get_LSB(b)          (__builtin_ctzll((b)))
+#define get_bit_count(b)    (__builtin_popcountll((b)))
 
 const u64 RANK_1 = 0x00000000000000FFULL;
 const u64 RANK_2 = 0x000000000000FF00ULL;
