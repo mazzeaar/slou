@@ -8,10 +8,10 @@ template <Color color>
 void leapers::pawn(MoveList& move_list, const Board& board)
 {
     constexpr bool is_white = utils::isWhite(color);
-    static constexpr int OFFSET_MOVE = (is_white) ? -8 : 8;
-    static constexpr int OFFSET_PUSH = (is_white) ? -16 : 16;
-    static constexpr int OFFSET_ATTACK_L = (is_white) ? -7 : 7;
-    static constexpr int OFFSET_ATTACK_R = (is_white) ? -9 : 9;
+    static constexpr int OFFSET_MOVE = (is_white) ? Directions::South : Directions::North;
+    static constexpr int OFFSET_PUSH = (is_white) ? 2 * Directions::South : 2 * Directions::North;
+    static constexpr int OFFSET_ATTACK_L = (is_white) ? Directions::SouthEast : Directions::NorthWest;
+    static constexpr int OFFSET_ATTACK_R = (is_white) ? Directions::SouthWest : Directions::NorthEast;
 
     static constexpr uint64_t LEFT_FILE = (is_white) ? FILE_A : FILE_H;
     static constexpr uint64_t RIGHT_FILE = (is_white) ? FILE_H : FILE_A;

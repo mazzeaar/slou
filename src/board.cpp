@@ -169,10 +169,14 @@ void Board::storeState(const Move& move)
 {
     MoveState state;
 
-    state.moving_piece = getPiece(move.getFrom());
+    const uint64_t from = move.getFrom();
+    const uint64_t to = move.getTo();
+    const bool is_capture = move.isCapture();
 
-    if ( move.isCapture() ) {
-        state.captured_piece = getPiece(move.getTo());
+    state.moving_piece = getPiece(from);
+
+    if ( is_capture ) {
+        state.captured_piece = getPiece(to);
     }
 
     state.ep_field_before = getEpField();

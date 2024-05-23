@@ -7,13 +7,9 @@ set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
 set(CMAKE_OSX_ARCHITECTURES "arm64")
 
 include_directories(include)
-
-# add json parser
-find_package(nlohmann_json 3.10.5 REQUIRED)
-
 file(GLOB_RECURSE SOURCES "src/*.cpp")
+
 add_executable(slou ${SOURCES})
-target_link_libraries(slou PRIVATE nlohmann_json::nlohmann_json)
 
 # binary output directory
 set_target_properties(slou PROPERTIES
