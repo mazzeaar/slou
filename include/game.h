@@ -8,10 +8,12 @@
 #include "board/board.h"
 #include "move.h"
 #include "move_generator/move_generation.h"
-
+#include "ttable.h"
 class Game {
 private:
     Board board;
+    TranspositionTable ttable;
+
 public:
     Game() = default;
     Game(const std::string& fen);
@@ -34,12 +36,15 @@ private:
     uint64_t debug_perft(Board& board, int depth);
 };
 
-
 template <Color color, bool print_moves>
 uint64_t Game::perft(Board& board, int depth)
 {
     MoveList list;
     uint64_t nodes = 0ULL;
+
+    if ( ttable.lookup(board.getHash(), nodes) ) {
+        return nodes;
+    }
 
     generate_moves<color>(list, board);
     if ( depth == 1 ) {
@@ -58,6 +63,8 @@ uint64_t Game::perft(Board& board, int depth)
         }
         board.undo<color>(move);
     }
+
+    ttable.store(board.getHash(), nodes);
 
     return nodes;
 }

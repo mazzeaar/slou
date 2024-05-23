@@ -21,5 +21,5 @@ namespace Zobrist {
 
     void initialize();
     uint64_t computeHash(const Board& board);
-    uint64_t updateHash(uint64_t hash, const Move& move, const Board& board);
+    inline uint64_t updateHash(uint64_t hash, const Move& move, const Board& board);
 }

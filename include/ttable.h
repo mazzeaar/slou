@@ -12,7 +12,7 @@ public:
         table[key] = value;
     }
 
-    bool lookup(Key key, Value& value) const
+    bool lookup(uint64_t key, uint64_t& value) const
     {
         auto it = table.find(key);
         if ( it != table.end() ) {

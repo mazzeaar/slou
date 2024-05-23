@@ -205,6 +205,8 @@ inline void Board::tryToRemoveCastlingRights(const Move& move)
 template <Color color>
 void Board::move(const Move& move)
 {
+    hash = Zobrist::updateHash(hash, move, *this);
+
     storeState(move);
     auto state = move_history.top();
 
@@ -293,10 +295,10 @@ void Board::undo(const Move& move)
     constexpr bool is_white = utils::isWhite(color);
     constexpr Color my_color = color;
     constexpr Color enemy_color = utils::switchColor(color);
-
     MoveState last_state = move_history.top();
     move_history.pop();
 
+    hash = last_state.hash;
     cur_color = enemy_color;
     ep_field = last_state.ep_field_before;
     castling_rights.raw = last_state.castling_rights;
