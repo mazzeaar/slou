@@ -177,32 +177,44 @@ inline void Board::tryToRemoveCastlingRights(const Move& move)
     const int from = move.getFrom();
     const int to = move.getTo();
 
+    bool removed_castling = false;
+
     if constexpr ( is_capture ) {
         constexpr int enemy_rook_k = (!is_white ? 7 : 63);
         constexpr int enemy_rook_q = (!is_white ? 0 : 56);
 
         if ( to == enemy_rook_k ) {
             removeCastleKs<enemy_color>();
+            removed_castling = true;
         }
         else if ( to == enemy_rook_q ) {
             removeCastleQs<enemy_color>();
+            removed_castling = true;
         }
     }
 
     if ( from == my_rook_k ) {
         removeCastleKs<my_color>();
+        removed_castling = true;
     }
     else if ( from == my_rook_q ) {
         removeCastleQs<my_color>();
+        removed_castling = true;
     }
     else if ( moving_piece == king ) {
         removeCastle<my_color>();
+        removed_castling = true;
+    }
+
+    if ( removed_castling ) {
+        Zobrist::toggleCastlingRights(hash, *this);
     }
 }
 
 // ================================
 // make move / unmake move
 // ================================
+
 template <Color color>
 void Board::move(const Move& move)
 {
@@ -343,8 +355,7 @@ void Board::undo(const Move& move)
 
         return;
     }
-
-    if ( move.isEnpassant() ) {
+    else if ( move.isEnpassant() ) {
         placePiece<PieceType::pawn, enemy_color>(move_to + ep_offset);
     }
     else if ( move.isPromotion() ) {
@@ -358,4 +369,6 @@ void Board::undo(const Move& move)
     else if ( move.isCapture() ) {
         place_piece<enemy_color>(captured_piece, move_to);
     }
+
+    hash = Zobrist::updateHash(hash, move, *this);
 }

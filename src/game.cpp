@@ -39,6 +39,16 @@ void Game::unmake_move(const std::string& algebraic_move)
     }
 }
 
+Move Game::bestMove(int depth)
+{
+    if ( board.whiteTurn() ) {
+        return getBestMove<Color::white>(board, depth);
+    }
+    else {
+        return getBestMove<Color::black>(board, depth);
+    }
+}
+
 uint64_t Game::perftSimpleEntry(int depth)
 {
     constexpr bool print_moves = false;

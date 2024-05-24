@@ -40,11 +40,12 @@ class Board {
     int full_move_clock = 1;
 
     std::stack<MoveState> move_history;
+
 public:
 
     Board(const std::string& fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string getFen() const;
-    uint64_t getHash() const { return hash; }
+    uint64_t getZobristKey() const { return hash; }
     inline bool whiteTurn() const { return utils::isWhite(cur_color); }
 
     template <Color color> void move(const Move& move);
@@ -52,6 +53,8 @@ public:
 
     template <Color color>
     constexpr bool isCheck(uint64_t enemy_attacks) const { return (enemy_attacks & getPieces<PieceType::king, color>()) != NULL_BB; }
+
+    char getRawCastlingRights() const { return castling_rights.raw; }
 
     /**
      * @brief Get the index of the piece board
