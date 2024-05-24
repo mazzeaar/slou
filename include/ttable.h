@@ -1,32 +1,28 @@
 #pragma once
-#include <unordered_map>
-#include <cstdint>
+#include <array>
+#include "move.h"
 
-class TranspositionTable {
+struct TTableEntry {
+    uint64_t key;
+    const Move best_move;
+    double score;
+    uint8_t dist_from_root;
+    uint8_t depth_searched;
+};
+
+class TTable {
 public:
-    using Key = uint64_t;
-    using Value = uint64_t;
+    TTable(uint64_t mb); // mb * 1024 * 1024 = bytes. bytes / sizeof(TTableEntry) = bytes to calloc
+    void addEntry();
 
-    void store(Key key, Value value)
-    {
-        table[key] = value;
-    }
+    bool has(uint64_t key); // store the iterator we just looked up so we dont have to do it twice.
+    TTableEntry* get(uint64_t key);
 
-    bool lookup(uint64_t key, uint64_t& value) const
-    {
-        auto it = table.find(key);
-        if ( it != table.end() ) {
-            value = it->second;
-            return true;
-        }
-        return false;
-    }
-
-    void clear()
-    {
-        table.clear();
-    }
-
+    constexpr size_t size() const { return _size; }
 private:
-    std::unordered_map<Key, Value> table;
+    uint64_t maskKey() const;
+
+    size_t _size;
+    TTableEntry* table;
+    TTableEntry* last_found_lookup;
 };

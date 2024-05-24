@@ -1,6 +1,7 @@
 #pragma once
 
 #include "board.h"
+#include "../zobrist.h"
 
 template <PieceType type, Color color>
 constexpr inline int Board::getIndex()

@@ -1,3 +1,4 @@
+#include "board/board.h"
 #include "zobrist.h"
 #include <limits>
 
@@ -7,8 +8,9 @@ namespace Zobrist {
     std::array<uint64_t, kNumCastling> castlingKeys;
     std::array<uint64_t, kNumSquares> enPassantKeys;
     std::unordered_map<uint64_t, uint64_t> table;
+}; // namespace Zobrist
 
-    void initialize()
+void Zobrist::initialize()
     {
         std::mt19937_64 rng(0xdeadbeef); // Fixed seed for reproducibility
         std::uniform_int_distribution<uint64_t> dist(0, std::numeric_limits<uint64_t>::max());
@@ -30,7 +32,7 @@ namespace Zobrist {
         }
     }
 
-    uint64_t computeHash(const Board& board)
+uint64_t Zobrist::computeHash(const Board& board)
     {
         uint64_t hash = 0;
 
@@ -57,7 +59,7 @@ namespace Zobrist {
         return hash;
     }
 
-    uint64_t updateHash(uint64_t hash, const Move& move, const Board& board)
+uint64_t Zobrist::updateHash(uint64_t hash, const Move& move, const Board& board)
     {
         int piece_id = board.getIndex(board.getPiece(move.getFrom()));
         hash ^= pieceKeys[piece_id][move.getFrom()];
@@ -113,5 +115,4 @@ namespace Zobrist {
         }
 
         return hash;
-    }
-}; // namespace Zobrist
+}

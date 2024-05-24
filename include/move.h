@@ -83,37 +83,6 @@ private:
     inline std::string_view idxToNotation(unsigned idx) const { return utils::square_to_coordinates.at(idx); }
 };
 
-struct MoveList {
-    std::array<Move, 256> moves = { Move() };   // max moves in a position is 218, this way we only need 512 bytes
-    uint8_t count = 0;                          // enough for 256 moves
-
-    constexpr void add(Move move)
-    {
-        if ( count < moves.size() ) {
-            moves[count++] = move;
-        }
-    }
-
-    constexpr void remove(size_t index)
-    {
-        if ( index < count ) {
-            moves[index] = moves[--count];
-        }
-    }
-
-    constexpr Move& operator[](size_t index) { return moves[index]; }
-    constexpr const Move& operator[](size_t index) const { return moves[index]; }
-
-    constexpr size_t size() const { return count; }
-    constexpr void clear() { count = 0; }
-
-    // for range based for loops
-    constexpr Move* begin() { return moves.data(); }
-    constexpr Move* end() { return moves.data() + count; }
-    constexpr const Move* begin() const { return moves.data(); }
-    constexpr const Move* end() const { return moves.data() + count; }
-};
-
 constexpr PieceType Move::getPromotionPieceType() const
 {
     const Flag flag = getFlag();
@@ -164,3 +133,34 @@ inline std::string Move::toLongAlgebraic() const
 
     return moveStr;
 }
+
+struct MoveList {
+    std::array<Move, 256> moves = { Move() };   // max moves in a position is 218, this way we only need 512 bytes
+    uint8_t count = 0;                          // enough for 256 moves
+
+    constexpr void add(Move move)
+    {
+        if ( count < moves.size() ) {
+            moves[count++] = move;
+        }
+    }
+
+    constexpr void remove(size_t index)
+    {
+        if ( index < count ) {
+            moves[index] = moves[--count];
+        }
+    }
+
+    constexpr Move& operator[](size_t index) { return moves[index]; }
+    constexpr const Move& operator[](size_t index) const { return moves[index]; }
+
+    constexpr size_t size() const { return count; }
+    constexpr void clear() { count = 0; }
+
+    // for range based for loops
+    constexpr Move* begin() { return moves.data(); }
+    constexpr Move* end() { return moves.data() + count; }
+    constexpr const Move* begin() const { return moves.data(); }
+    constexpr const Move* end() const { return moves.data() + count; }
+};

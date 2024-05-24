@@ -7,7 +7,6 @@
 #include "definitions.h"
 #include "bitboard.h"
 #include "move.h"
-#include "zobrist.h"
 
 struct MoveState {
     uint64_t ep_field_before = 0ULL;
