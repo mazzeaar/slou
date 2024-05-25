@@ -1,32 +1,52 @@
 #pragma once
-#include <unordered_map>
-#include <cstdint>
+#include <array>
+#include "move.h"
 
-class TranspositionTable {
+struct TTableEntry {
+    uint64_t key = 0;
+    uint64_t node_count = 0;
+    int depth_searched = 0;
+    Move best_move = Move();
+    double score = 0.0;
+};
+
+class TTable {
 public:
-    using Key = uint64_t;
-    using Value = uint64_t;
-
-    void store(Key key, Value value)
+    TTable(const uint64_t MB = 32)
+        : _size((MB * 1000 * 1000) / sizeof(TTableEntry))
     {
-        table[key] = value;
+        table = new TTableEntry[_size];
     }
 
-    bool lookup(Key key, Value& value) const
+    ~TTable() = default;
+
+    void addEntry(uint64_t key, uint64_t node_count, int depth, const Move best_move = Move(), double score = 0.0)
     {
-        auto it = table.find(key);
-        if ( it != table.end() ) {
-            value = it->second;
-            return true;
+        uint64_t index = getIdx(key);
+        table[index] = { key, node_count, depth, best_move, score };
+    }
+
+    bool has(uint64_t key, int depth) const
+    {
+        uint64_t index = getIdx(key);
+        const auto& entry = table[index];
+        return entry.key == key && entry.depth_searched == depth;
+    }
+
+    TTableEntry* get(uint64_t key, int depth)
+    {
+        uint64_t index = getIdx(key);
+        auto& entry = table[index];
+        if ( entry.key == key && entry.depth_searched == depth ) {
+            return &entry;
         }
-        return false;
+        return nullptr;
     }
 
-    void clear()
-    {
-        table.clear();
-    }
+    constexpr size_t size() const { return _size; }
 
 private:
-    std::unordered_map<Key, Value> table;
+    inline uint64_t getIdx(uint64_t key) const { return key % _size; }
+    size_t _size;
+    TTableEntry* table;
 };

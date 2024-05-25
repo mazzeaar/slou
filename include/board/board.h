@@ -7,12 +7,11 @@
 #include "definitions.h"
 #include "bitboard.h"
 #include "move.h"
-#include "../zobrist.h"
 
 struct MoveState {
     uint64_t ep_field_before = 0ULL;
     char castling_rights = 0x00;
-
+    uint64_t hash;
     Piece moving_piece = Piece::none;
     Piece captured_piece = Piece::none;
     Piece promotion_piece = Piece::none;
@@ -24,6 +23,8 @@ class Board {
     Color cur_color = Color::white;
     std::array<uint64_t, 6 + 6 + 2> pieces = { 0ULL };
     uint64_t ep_field = 0ULL;
+
+    uint64_t zobrist_hash;
 
     std::array<Piece, 64> mailbox { Piece::none };
 
@@ -41,11 +42,12 @@ class Board {
     int full_move_clock = 1;
 
     std::stack<MoveState> move_history;
+
 public:
 
     Board(const std::string& fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string getFen() const;
-
+    inline uint64_t getZobristKey() const { return zobrist_hash; }
     inline bool whiteTurn() const { return utils::isWhite(cur_color); }
 
     template <Color color> void move(const Move& move);
@@ -53,6 +55,8 @@ public:
 
     template <Color color>
     constexpr bool isCheck(uint64_t enemy_attacks) const { return (enemy_attacks & getPieces<PieceType::king, color>()) != NULL_BB; }
+
+    char getRawCastlingRights() const { return castling_rights.raw; }
 
     /**
      * @brief Get the index of the piece board

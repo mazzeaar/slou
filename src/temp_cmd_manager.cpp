@@ -1,4 +1,5 @@
 #include "temp_cmd_manager.h"
+#include "game.h"
 
 template <Color color>
 u64 perft_entry(Board& board, int depth);
@@ -116,7 +117,7 @@ void CommandManager::parseCommand()
             ss >> token;
             if ( token == "startpos" ) {
                 _fen = STARTPOS;
-                board = Board(STARTPOS);
+                game = Game(STARTPOS);
                 ss >> token;
             }
             else if ( token == "fen" ) {
@@ -125,7 +126,7 @@ void CommandManager::parseCommand()
                     fen += token + " ";
                 }
 
-                board = Board(fen);
+                game = Game(fen);
             }
             else {
                 std::cout << "unknown command: " << token << '\n';
@@ -133,13 +134,7 @@ void CommandManager::parseCommand()
 
             if ( token == "moves" ) {
                 while ( ss >> token ) {
-                    auto mv = makeMoveFromString(token, board);
-                    if ( board.whiteTurn() ) {
-                        board.move<Color::white>(mv);
-                    }
-                    else {
-                        board.move<Color::black>(mv);
-                    }
+                    game.make_move(token);
                 }
             }
         }
@@ -148,27 +143,16 @@ void CommandManager::parseCommand()
                 if ( token == "perft" ) {
                     ss >> token;
                     int depth = std::stoi(token);
-                    if ( board.whiteTurn() ) {
-                        perft_entry<Color::white>(board, depth);
-                    }
-                    else {
-                        perft_entry<Color::white>(board, depth);
-                    }
+                    const uint64_t total_nodes = game.perftDetailEntry(depth);
+                    std::cout << '\n' << "nodes searched: " << total_nodes << '\n';
                 }
                 else {
-                    goto here;
+                    goto here; // uuuuuh goto ooooh nooo
                 }
             }
             else {
             here:
-                Move best_move;
-                if ( board.whiteTurn() ) {
-                    best_move = getBestMove<Color::white>(board);
-                }
-                else {
-                    best_move = getBestMove<Color::black>(board);
-                }
-
+                Move best_move = game.bestMove();
                 std::cout << "bestmove " << best_move.toLongAlgebraic() << '\n';
             }
         }
@@ -176,7 +160,7 @@ void CommandManager::parseCommand()
             std::cout << "readyok\n";
         }
         else if ( token == "print" || token == "d" ) {
-            std::cout << board.toString() << '\n';
+            std::cout << game.toString() << '\n';
         }
         else if ( token == "ucinewgame" ) {
             // do nothing
