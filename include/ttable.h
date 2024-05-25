@@ -2,51 +2,59 @@
 #include <array>
 #include "move.h"
 
-struct TTableEntry {
+struct TTEntry_perft {
     uint64_t key = 0;
     uint64_t node_count = 0;
     int depth_searched = 0;
-    Move best_move = Move();
-    double score = 0.0;
 };
 
+template <typename Entry, size_t MB>
 class TTable {
-public:
-    TTable(const uint64_t MB = 32)
-        : _size((MB * 1000 * 1000) / sizeof(TTableEntry))
-    {
-        table = new TTableEntry[_size];
-    }
+    static constexpr size_t _size = (MB * 1000 * 1000) / sizeof(Entry);
+    std::array<Entry, _size> table;
 
+public:
+    TTable() = default;
     ~TTable() = default;
 
-    void addEntry(uint64_t key, uint64_t node_count, int depth, const Move best_move = Move(), double score = 0.0)
+    template <typename... Args>
+    inline void emplace(uint64_t key, Args&&... args)
     {
-        uint64_t index = getIdx(key);
-        table[index] = { key, node_count, depth, best_move, score };
+        const uint64_t index = getIdx(key);
+        table[index] = Entry { key, std::forward<Args>(args)... };
     }
 
-    bool has(uint64_t key, int depth) const
+    inline bool if_has_get(uint64_t key, int depth, uint64_t& nodes)
     {
-        uint64_t index = getIdx(key);
+        const uint64_t index = getIdx(key);
+        const auto entry = table[index];
+        if ( entry.key == key && entry.depth_searched == depth ) {
+            nodes = entry.node_count;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    inline bool has(uint64_t key, int depth) const
+    {
+        const uint64_t index = getIdx(key);
         const auto& entry = table[index];
         return entry.key == key && entry.depth_searched == depth;
     }
 
-    TTableEntry* get(uint64_t key, int depth)
+    inline uint64_t get(uint64_t key, int depth)
     {
         uint64_t index = getIdx(key);
         auto& entry = table[index];
         if ( entry.key == key && entry.depth_searched == depth ) {
-            return &entry;
+            return entry.node_count;
         }
-        return nullptr;
+        return NULL_BB;
     }
 
     constexpr size_t size() const { return _size; }
-
 private:
     inline uint64_t getIdx(uint64_t key) const { return key % _size; }
-    size_t _size;
-    TTableEntry* table;
 };

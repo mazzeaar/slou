@@ -112,15 +112,35 @@ const std::array<int, 64> getPositionBoard()
     }
 }
 
-template <Color color>
 constexpr int getMaterialScore(const Board& board)
 {
-    return (get_bit_count((board.getPieces<PieceType::pawn, color>())) * 100)
-        + (get_bit_count((board.getPieces<PieceType::knight, color>())) * 320)
-        + (get_bit_count((board.getPieces<PieceType::bishop, color>())) * 320)
-        + (get_bit_count((board.getPieces<PieceType::rook, color>())) * 500)
-        + (get_bit_count((board.getPieces<PieceType::queen, color>())) * 900)
-        + (get_bit_count((board.getPieces<PieceType::king, color>())) * 10000);
+    const uint64_t white_pawn = board.getPieces<PieceType::pawn, Color::white>();
+    const uint64_t white_knight = board.getPieces<PieceType::knight, Color::white>();
+    const uint64_t white_bishop = board.getPieces<PieceType::bishop, Color::white>();
+    const uint64_t white_rook = board.getPieces<PieceType::rook, Color::white>();
+    const uint64_t white_queen = board.getPieces<PieceType::queen, Color::white>();
+    const uint64_t white_king = board.getPieces<PieceType::king, Color::white>();
+
+    const uint64_t black_pawn = board.getPieces<PieceType::pawn, Color::black>();
+    const uint64_t black_knight = board.getPieces<PieceType::knight, Color::black>();
+    const uint64_t black_bishop = board.getPieces<PieceType::bishop, Color::black>();
+    const uint64_t black_rook = board.getPieces<PieceType::rook, Color::black>();
+    const uint64_t black_queen = board.getPieces<PieceType::queen, Color::black>();
+    const uint64_t black_king = board.getPieces<PieceType::king, Color::black>();
+
+    const int pawn_score = (get_bit_count(white_pawn) - get_bit_count(black_pawn)) * 100;
+    const int knight_score = (get_bit_count(white_knight) - get_bit_count(black_knight)) * 320;
+    const int bishop_score = (get_bit_count(white_bishop) - get_bit_count(black_bishop)) * 320;
+    const int rook_score = (get_bit_count(white_rook) - get_bit_count(black_rook)) * 500;
+    const int queen_score = (get_bit_count(white_queen) - get_bit_count(black_queen)) * 900;
+    const int king_score = (get_bit_count(white_king) - get_bit_count(black_king)) * 10000;
+
+    return pawn_score
+        + knight_score
+        + bishop_score
+        + rook_score
+        + queen_score
+        + king_score;
 }
 
 template <PieceType type, Color color>
@@ -161,7 +181,7 @@ constexpr int getPositionalScore(const Board& board)
 template <Color color>
 constexpr double evalPosition(Board& board)
 {
-    const int material_score = getMaterialScore<color>(board);
+    const int material_score = getMaterialScore(board);
     const int position_score = getPositionalScore<color>(board);
     const double score = material_score + position_score;
     if constexpr ( utils::isWhite(color) ) {
@@ -170,72 +190,4 @@ constexpr double evalPosition(Board& board)
     else {
         return -score;
     }
-}
-
-template <Color color>
-double minimax(Board& board, int depth, double alpha, double beta)
-{
-    if ( depth == 0 ) {
-        return evalPosition<color>(board);
-    }
-
-    MoveList move_list;
-    generate_moves<color>(move_list, board);
-    const uint64_t enemy_attacks = generate_attacks<color>(board);
-
-    if ( move_list.size() == 0 ) {
-        if ( board.isCheck<color>(enemy_attacks) ) {
-            return (color == Color::white) ? -INFTY : INFTY;
-        }
-        else {
-            return 0;
-        }
-    }
-
-    double best_score = (color == Color::white) ? -INFTY : INFTY;
-    for ( const auto& move : move_list ) {
-        board.move<color>(move);
-        double score = minimax<utils::switchColor(color)>(board, depth - 1, alpha, beta);
-        board.undo<color>(move);
-
-        if constexpr ( color == Color::white ) {
-            best_score = std::max(best_score, score);
-            alpha = std::max(alpha, score);
-        }
-        else {
-            best_score = std::min(best_score, score);
-            beta = std::min(beta, score);
-        }
-
-        if ( beta <= alpha ) {
-            break;
-        }
-    }
-
-    return best_score;
-}
-
-template <Color color>
-Move getBestMove(Board& board, int depth = 5)
-{
-    MoveList move_list;
-    generate_moves<color>(move_list, board);
-
-    Move best_move;
-    double best_score = (color == Color::white) ? -INFTY : INFTY;
-    double alpha = -INFTY;
-    double beta = INFTY;
-
-    for ( const auto& move : move_list ) {
-        board.move<color>(move);
-        double score = minimax<utils::switchColor(color)>(board, depth - 1, alpha, beta);
-        board.undo<color>(move);
-
-        if ( (color == Color::white && score > best_score) || (color == Color::black && score < best_score) ) {
-            best_score = score;
-            best_move = move;
-        }
-    }
-
-    return best_move;
 }
