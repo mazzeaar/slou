@@ -2,11 +2,13 @@
 
 cutechess="/Users/aaronmazzetta/dev/cpp/cutechess/build/cutechess-cli"
 
+BIN="$(dirname "$0")/bin"
+
 ENGINE1_NAME="v1"
 ENGINE2_NAME="current"
 
-ENGINE1_PATH="bin/slou_v1"  # Ensure this points to the executable file
-ENGINE2_PATH="bin/slou_v1"  # Ensure this points to the executable file
+ENGINE1_PATH="$BIN/slou_v1"  # Ensure this points to the executable file
+ENGINE2_PATH="$BIN/slou_v1"  # Ensure this points to the executable file
 
 OUTPUT_PATH="./results.pgn"
 

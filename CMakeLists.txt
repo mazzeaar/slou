@@ -30,3 +30,10 @@ add_custom_target(test
     USES_TERMINAL
     DEPENDS slou
 )
+
+# run a tournament against the previous version
+add_custom_target(tournament
+    COMMAND ../tournament.sh
+    USES_TERMINAL
+    DEPENDS slou
+)
