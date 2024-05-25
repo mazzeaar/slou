@@ -14,15 +14,26 @@ my first bugfree movegen was 3Mnps, so the speedup is already ~10x, only 2x to g
 
 my target is at least 100Mnps. matching Charon would be nice, although hard.
 
-```
---------------------------------------
-Passed:    152/152   
---------------------------------------
-Duration:  7037ms    
-Nodes:     311,143,032
-NPS:       44,214,415
---------------------------------------
-```
+- 25.05.2024</br>
+  Implemented Zobrist hashing and transposition tables to avoid calculating the same position twice.
+  ```
+  --------------------------------------
+  Duration:  4782ms    
+  Nodes:     311,143,032
+  NPS:       65,058,685
+  --------------------------------------
+  ````
+
+- 22.05.2024</br>
+  Cleaned up the movegenerator and moved some choices to compiletime.
+  ```
+  --------------------------------------
+  Duration:  7037ms    
+  Nodes:     311,143,032
+  NPS:       44,214,415
+  --------------------------------------
+  ```
+
 ## Todos
 - [x] [bitboards + mailbox]([https://www.chessprogramming.org/Move_Generation](https://www.chessprogramming.org/Bitboards)) for efficiency
   - bitboards are now used for faster movegen
