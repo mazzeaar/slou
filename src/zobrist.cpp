@@ -64,36 +64,4 @@ namespace Zobrist {
 
         return hash;
     }
-
-    uint64_t updateHash(uint64_t hash, const Move& move, const Board& board)
-    {
-        updatePieceMove(hash, move, board);
-
-        if ( move.isCapture() ) {
-            updateCapture(hash, move, board);
-        }
-
-        // Special cases
-        if ( move.isCastle() ) {
-            updateCastling(hash, move, board);
-        }
-        else if ( move.isEnpassant() ) {
-            updateEnPassantCapture(hash, move, board);
-        }
-        else if ( move.isPromotion() ) {
-            updatePromotion(hash, move, board);
-        }
-
-        // Toggle the side to move
-        toggleBlackToMove(hash);
-
-        // Update en passant
-        toggleEnPassant(hash, board.getEpField());
-        if ( move.isDoublePawnPush() ) {
-            updateEnPassantField(hash, move, board);
-        }
-
-        return hash;
-    }
-
 }; // namespace Zobrist

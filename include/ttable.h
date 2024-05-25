@@ -13,7 +13,7 @@ struct TTableEntry {
 class TTable {
 public:
     TTable(const uint64_t MB = 32)
-        : _size((MB * 1024 * 1024) / sizeof(TTableEntry))
+        : _size((MB * 1000 * 1000) / sizeof(TTableEntry))
     {
         table = new TTableEntry[_size];
     }
@@ -46,7 +46,7 @@ public:
     constexpr size_t size() const { return _size; }
 
 private:
-    uint64_t getIdx(uint64_t key) const { return key % _size; }
+    inline uint64_t getIdx(uint64_t key) const { return key % _size; }
     size_t _size;
     TTableEntry* table;
 };

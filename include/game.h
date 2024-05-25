@@ -14,7 +14,7 @@
 class Game {
 private:
     Board board;
-    TTable ttable = TTable(32);
+    TTable ttable = TTable(8);
 
 public:
     Game() = default;

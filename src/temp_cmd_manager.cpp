@@ -143,7 +143,8 @@ void CommandManager::parseCommand()
                 if ( token == "perft" ) {
                     ss >> token;
                     int depth = std::stoi(token);
-                    game.perftDetailEntry(depth);
+                    const uint64_t total_nodes = game.perftDetailEntry(depth);
+                    std::cout << '\n' << "nodes searched: " << total_nodes << '\n';
                 }
                 else {
                     goto here; // uuuuuh goto ooooh nooo
