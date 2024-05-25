@@ -7,9 +7,6 @@
 
 # formatted as "DEPTH FEN EXPECTED"
 tests=(
-    "6 n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1 71179139"
-    "5 rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ -  89941194" 
-
     "6 8/5bk1/8/2Pp4/8/1K6/8/8 w - d6 0 1 824064"
     "6 8/8/1k6/8/2pP4/8/5BK1/8 b - d3 0 1 824064"
     "6 8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1 1440467"
@@ -160,6 +157,8 @@ tests=(
     "3 n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1 9483"
     "4 n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1 182838"
     "5 n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1 3605103"
+    "6 n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1 71179139"
+    "5 rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ -  89941194" 
 )
 
 NAME="slou"
