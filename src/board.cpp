@@ -102,7 +102,7 @@ Board::Board(const std::string& fen)
         ++part;
     }
 
-    hash = Zobrist::computeHash(*this);
+    zobrist_hash = Zobrist::computeHash(*this);
 }
 
 std::string Board::getFen() const
@@ -183,7 +183,7 @@ void Board::storeState(const Move& move)
 
     state.ep_field_before = getEpField();
     state.castling_rights = castling_rights.raw;
-    state.hash = hash;
+    state.hash = zobrist_hash;
 
     move_history.push(state);
 }

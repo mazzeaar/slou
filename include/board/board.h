@@ -23,7 +23,9 @@ class Board {
     Color cur_color = Color::white;
     std::array<uint64_t, 6 + 6 + 2> pieces = { 0ULL };
     uint64_t ep_field = 0ULL;
-    uint64_t hash;
+
+    uint64_t zobrist_hash;
+
     std::array<Piece, 64> mailbox { Piece::none };
 
     union {
@@ -45,7 +47,7 @@ public:
 
     Board(const std::string& fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string getFen() const;
-    uint64_t getZobristKey() const { return hash; }
+    inline uint64_t getZobristKey() const { return zobrist_hash; }
     inline bool whiteTurn() const { return utils::isWhite(cur_color); }
 
     template <Color color> void move(const Move& move);

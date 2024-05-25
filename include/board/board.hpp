@@ -70,6 +70,9 @@ constexpr inline void Board::movePiece(uint64_t from, uint64_t to)
     mailbox[to] = piece;
 
     pieces[occupancy_index] ^= mask;
+
+    Zobrist::togglePiece(zobrist_hash, piece_index, from);
+    Zobrist::togglePiece(zobrist_hash, piece_index, to);
 }
 
 // IMPORTANT! square is assumed to be the index of the piece, not the bitboard with the bit already set!
@@ -84,6 +87,8 @@ constexpr inline void Board::removePiece(uint64_t square)
     pieces[occ_index] &= mask;
 
     mailbox[square] = Piece::none;
+
+    Zobrist::togglePiece(zobrist_hash, piece_index, square);
 }
 
 // IMPORTANT! square is assumed to be the index of the piece, not the bitboard with the bit already set!
@@ -99,6 +104,8 @@ constexpr inline void Board::placePiece(uint64_t square)
     pieces[piece_index] |= mask;
 
     pieces[occupancy_index] |= mask;
+
+    Zobrist::togglePiece(zobrist_hash, piece_index, square);
 }
 
 template <Color color>
@@ -112,6 +119,8 @@ inline void Board::remove_piece(Piece piece, int square)
     pieces[piece_index] &= mask;
 
     pieces[occupancy_index] &= mask;
+
+    Zobrist::togglePiece(zobrist_hash, piece_index, square);
 }
 
 template <Color color>
@@ -125,6 +134,8 @@ inline void Board::place_piece(Piece piece, int square)
     pieces[piece_index] |= mask;
 
     pieces[occupancy_index] |= mask;
+
+    Zobrist::togglePiece(zobrist_hash, piece_index, square);
 }
 
 template <Color color>
@@ -144,12 +155,16 @@ inline void Board::move_piece(Piece piece, int from, int to)
     mailbox[to] = piece;
 
     pieces[occupancy_index] ^= mask;
+
+    Zobrist::togglePiece(zobrist_hash, piece_index, from);
+    Zobrist::togglePiece(zobrist_hash, piece_index, to);
 }
 
 // ================================
 // Remove Castling
 // ================================
 // hacky way to disable castling rights;
+
 template <Color color, bool is_capture>
 inline void Board::tryToRemoveCastlingRights(const Move& move)
 {
@@ -177,37 +192,62 @@ inline void Board::tryToRemoveCastlingRights(const Move& move)
     const int from = move.getFrom();
     const int to = move.getTo();
 
-    bool removed_castling = false;
-
     if constexpr ( is_capture ) {
         constexpr int enemy_rook_k = (!is_white ? 7 : 63);
         constexpr int enemy_rook_q = (!is_white ? 0 : 56);
 
         if ( to == enemy_rook_k ) {
             removeCastleKs<enemy_color>();
-            removed_castling = true;
+
+            if ( utils::isWhite(my_color) ) {
+                Zobrist::toggleCastlingKW(zobrist_hash);
+            }
+            else {
+                Zobrist::toggleCastlingKB(zobrist_hash);
+            }
         }
         else if ( to == enemy_rook_q ) {
             removeCastleQs<enemy_color>();
-            removed_castling = true;
+
+            if ( utils::isWhite(my_color) ) {
+                Zobrist::toggleCastlingQW(zobrist_hash);
+            }
+            else {
+                Zobrist::toggleCastlingQB(zobrist_hash);
+            }
         }
     }
 
     if ( from == my_rook_k ) {
         removeCastleKs<my_color>();
-        removed_castling = true;
+
+        if ( utils::isWhite(my_color) ) {
+            Zobrist::toggleCastlingKW(zobrist_hash);
+        }
+        else {
+            Zobrist::toggleCastlingKB(zobrist_hash);
+        }
     }
     else if ( from == my_rook_q ) {
         removeCastleQs<my_color>();
-        removed_castling = true;
+
+        if ( utils::isWhite(my_color) ) {
+            Zobrist::toggleCastlingQW(zobrist_hash);
+        }
+        else {
+            Zobrist::toggleCastlingQB(zobrist_hash);
+        }
     }
     else if ( moving_piece == king ) {
         removeCastle<my_color>();
-        removed_castling = true;
-    }
 
-    if ( removed_castling ) {
-        Zobrist::toggleCastlingRights(hash, *this);
+        if ( utils::isWhite(my_color) ) {
+            Zobrist::toggleCastlingW(zobrist_hash);
+        }
+        else {
+            Zobrist::toggleCastlingB(zobrist_hash);
+        }
+
     }
 }
 
@@ -218,8 +258,6 @@ inline void Board::tryToRemoveCastlingRights(const Move& move)
 template <Color color>
 void Board::move(const Move& move)
 {
-    hash = Zobrist::updateHash(hash, move, *this);
-
     storeState(move);
     auto state = move_history.top();
 
@@ -235,6 +273,9 @@ void Board::move(const Move& move)
 
     constexpr auto pawn_push_function = (utils::isWhite(my_color) ? north : south);
 
+    Zobrist::toggleBlackToMove(zobrist_hash);
+    Zobrist::toggleEnPassant(zobrist_hash, ep_field);
+
     move_piece<color>(moving_piece, move_from, move_to);
     switch ( move_flag ) {
         case Move::Flag::quiet: {
@@ -245,6 +286,7 @@ void Board::move(const Move& move)
             ep_field = new_ep_field;
 
             cur_color = enemy_color;
+
             return; // early exit because we set the ep field
         } break;
         case Move::Flag::castle_k: {
@@ -253,6 +295,14 @@ void Board::move(const Move& move)
 
             movePiece<PieceType::rook, my_color>(rook_from, rook_to);
             removeCastle<my_color>();
+
+            if ( utils::isWhite(my_color) ) {
+                Zobrist::toggleCastlingW(zobrist_hash);
+            }
+            else {
+                Zobrist::toggleCastlingB(zobrist_hash);
+            }
+
         } break;
         case Move::Flag::castle_q: {
             constexpr int rook_from = (utils::isWhite(my_color) ? 0 : 56);
@@ -260,6 +310,13 @@ void Board::move(const Move& move)
 
             movePiece<PieceType::rook, my_color>(rook_from, rook_to);
             removeCastle<my_color>();
+
+            if ( utils::isWhite(my_color) ) {
+                Zobrist::toggleCastlingW(zobrist_hash);
+            }
+            else {
+                Zobrist::toggleCastlingB(zobrist_hash);
+            }
         } break;
         case Move::Flag::capture: {
             remove_piece<enemy_color>(captured_piece, move_to);
@@ -269,7 +326,8 @@ void Board::move(const Move& move)
         } break;
         case Move::Flag::ep: {
             constexpr int offset = (utils::isWhite(my_color) ? -8 : 8);
-            removePiece<PieceType::pawn, enemy_color>(move_to + offset);
+            const uint64_t enemy_square = move_to + offset;
+            removePiece<PieceType::pawn, enemy_color>(enemy_square);
         } break;
         case Move::Flag::promo_n:
         case Move::Flag::promo_b:
@@ -287,7 +345,6 @@ void Board::move(const Move& move)
                 tryToRemoveCastlingRights<my_color, true>(move);
             }
 
-            //remove_piece<my_color>(moving_piece, move_to); // remove the pawn we moved earlier
             removePiece<PieceType::pawn, my_color>(move_to);
             place_piece<my_color>(state.promotion_piece, move_to);
         } break;
@@ -311,7 +368,6 @@ void Board::undo(const Move& move)
     MoveState last_state = move_history.top();
     move_history.pop();
 
-    hash = last_state.hash;
     cur_color = enemy_color;
     ep_field = last_state.ep_field_before;
     castling_rights.raw = last_state.castling_rights;
@@ -353,6 +409,7 @@ void Board::undo(const Move& move)
             movePiece<PieceType::rook, my_color>(rook_to, rook_from);
         }
 
+        zobrist_hash = last_state.hash;
         return;
     }
     else if ( move.isEnpassant() ) {
@@ -370,5 +427,5 @@ void Board::undo(const Move& move)
         place_piece<enemy_color>(captured_piece, move_to);
     }
 
-    hash = Zobrist::updateHash(hash, move, *this);
+    zobrist_hash = last_state.hash;
 }
