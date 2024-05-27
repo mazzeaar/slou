@@ -36,10 +36,10 @@ Board::Board(const std::string& fen)
             const int square = (rank * 8) + file;
             const Piece piece = utils::getPiece(c);
             if ( utils::isWhite(piece) ) {
-                place_piece<Color::white>(piece, square);
+                placePiece<Color::white>(piece, square);
             }
             else {
-                place_piece<Color::black>(piece, square);
+                placePiece<Color::black>(piece, square);
             }
 
             mailbox[square] = piece;
