@@ -190,6 +190,7 @@ double Game::minimax(Board& board, int depth, double alpha, double beta)
                 best_score = score;
                 best_move = move;
             }
+
             alpha = std::max(alpha, score);
         }
         else {
@@ -197,6 +198,7 @@ double Game::minimax(Board& board, int depth, double alpha, double beta)
                 best_score = score;
                 best_move = move;
             }
+
             beta = std::min(beta, score);
         }
 
