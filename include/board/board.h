@@ -306,6 +306,7 @@ public:
     template <PieceType type, Color color> constexpr void placePiece(uint64_t square);
 
     std::string toString() const;
+
 private:
 
     void storeState(const Move& move);
