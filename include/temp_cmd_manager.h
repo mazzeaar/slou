@@ -13,12 +13,16 @@
 class CommandManager {
 private:
     std::string _fen = STARTPOS;
-    Game game = Game(_fen);
-    std::string& to_lower(std::string& s) { for ( char c : s ) { c = std::tolower(c); } return s; }
+    Game game;
 
+    std::string& to_lower(std::string& s) { for ( char c : s ) { c = std::tolower(c); } return s; }
     Move makeMoveFromString(const std::string& moveStr, const Board& board);
 
 public:
-    CommandManager() = default;
+    CommandManager()
+    {
+        game = Game();
+    }
+
     void parseCommand();
 };

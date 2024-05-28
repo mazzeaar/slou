@@ -16,9 +16,14 @@ class Game {
 private:
     Board board;
     TTable<TTEntry_perft, TTABLE_SIZE_MB> tt_perft;
-
+    TTable<TTEntry_eval, TTABLE_SIZE_MB> tt_eval;
 public:
-    Game() = default;
+    Game()
+    {
+        board = Board();
+        tt_perft = TTable<TTEntry_perft, TTABLE_SIZE_MB>();
+    }
+
     Game(const std::string& fen);
 
     void make_move(const std::string& algebraic_move);
@@ -117,48 +122,54 @@ uint64_t Game::debug_perft(Board& board, int depth)
 template <Color color>
 Move Game::getBestMove(Board& board, int depth)
 {
-    /*
     uint64_t key = board.getZobristKey();
     if ( tt_eval.has(key, depth) ) {
-        auto entry = tt_eval.get(key, depth);
-        return entry->best_move;
+        auto entry = tt_eval.get(key);
+        if ( entry.type == TTEntry_eval::EXACT ) {
+            return entry.best_move;
+        }
     }
-    */
 
     MoveList move_list;
     generate_moves<color>(move_list, board);
 
+    assert(move_list.size() != 0 && "no moves to generate! in getBestMove()");
+
     Move best_move;
-    double best_score = (color == Color::white) ? -INFTY : INFTY;
+    double best_score = -INFTY;  // negamax, so we initialize to -INFTY
     double alpha = -INFTY;
     double beta = INFTY;
 
     for ( const auto& move : move_list ) {
         board.move<color>(move);
-        double score = minimax<utils::switchColor(color)>(board, depth - 1, alpha, beta);
+        double score = -minimax<utils::switchColor(color)>(board, depth - 1, -beta, -alpha);
         board.undo<color>(move);
 
-        if ( (color == Color::white && score > best_score) || (color == Color::black && score < best_score) ) {
+        if ( score > best_score ) {
             best_score = score;
             best_move = move;
         }
+
+        alpha = std::max(alpha, score);
+        if ( alpha >= beta ) {
+            break;  // pruning
+        }
     }
 
-    // tt_eval.addEntry(key, depth, best_move, best_score, TTEntry_eval::EXACT);
+    tt_eval.emplace(key, depth, best_score, best_move, TTEntry_eval::EXACT);
 
+    assert(best_move != Move() && "wtf!");
     return best_move;
 }
 
 template <Color color>
 double Game::minimax(Board& board, int depth, double alpha, double beta)
 {
-    /*
     uint64_t key = board.getZobristKey();
     if ( tt_eval.has(key, depth) ) {
-        auto entry = tt_eval.get(key, depth);
-        return entry->score;
+        auto entry = tt_eval.get(key);
+        return entry.best_score;
     }
-    */
 
     if ( depth == 0 ) {
         return evalPosition<color>(board);
@@ -171,44 +182,29 @@ double Game::minimax(Board& board, int depth, double alpha, double beta)
     if ( move_list.size() == 0 ) {
         const uint64_t enemy_attacks = generate_attacks<utils::switchColor(color)>(board);
         if ( board.isCheck<color>(enemy_attacks) ) {
-            return (utils::isWhite(color)) ? -INFTY : INFTY;
+            return (utils::isWhite(color)) ? INFTY : -INFTY;
         }
         else {
             return 0;
         }
     }
 
-    double best_score = (utils::isWhite(color)) ? -INFTY : INFTY;
-    Move best_move;
+    double best_score = -INFTY;  // negamax, so we initialize to -INFTY
     for ( const auto& move : move_list ) {
         board.move<color>(move);
-        double score = minimax<utils::switchColor(color)>(board, depth - 1, alpha, beta);
+        double score = -minimax<utils::switchColor(color)>(board, depth - 1, -beta, -alpha);
         board.undo<color>(move);
 
-        if constexpr ( color == Color::white ) {
-            if ( score > best_score ) {
-                best_score = score;
-                best_move = move;
-            }
-
-            alpha = std::max(alpha, score);
-        }
-        else {
-            if ( score < best_score ) {
-                best_score = score;
-                best_move = move;
-            }
-
-            beta = std::min(beta, score);
+        if ( score > best_score ) {
+            best_score = score;
         }
 
-
-        if ( beta <= alpha ) {
-            break; // pruning
+        alpha = std::max(alpha, score);
+        if ( alpha >= beta ) {
+            break;  // Alpha-beta pruning
         }
     }
 
-    /*
     auto type = TTEntry_eval::EXACT;
     if ( best_score <= alpha ) {
         type = TTEntry_eval::UPPERBOUND;
@@ -216,8 +212,8 @@ double Game::minimax(Board& board, int depth, double alpha, double beta)
     else if ( best_score >= beta ) {
         type = TTEntry_eval::LOWERBOUND;
     }
-    tt_eval.addEntry(key, depth, best_move, best_score, type);
-    */
+
+    tt_eval.emplace(key, depth, best_score, Move(), type);
 
     return best_score;
 }

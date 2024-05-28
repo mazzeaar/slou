@@ -8,13 +8,20 @@ struct TTEntry_perft {
     int depth_searched = 0;
 };
 
+struct TTEntry_eval {
+    uint64_t key = 0;
+    int depth_searched = 0;
+    double best_score = 0.0;
+    Move best_move = Move();
+    enum { EXACT, UPPERBOUND, LOWERBOUND } type;
+};
+
 template <typename Entry, size_t MB>
 class TTable {
     static constexpr size_t _size = (MB * 1000 * 1000) / sizeof(Entry);
-    std::array<Entry, _size> table;
-
+    Entry* table;
 public:
-    TTable() = default;
+    TTable() : table(new Entry[_size]) { }
     ~TTable() = default;
 
     template <typename... Args>
@@ -44,14 +51,10 @@ public:
         return entry.key == key && entry.depth_searched == depth;
     }
 
-    inline uint64_t get(uint64_t key, int depth)
+    inline Entry get(uint64_t key)
     {
         uint64_t index = getIdx(key);
-        auto& entry = table[index];
-        if ( entry.key == key && entry.depth_searched == depth ) {
-            return entry.node_count;
-        }
-        return NULL_BB;
+        return table[index];
     }
 
     constexpr size_t size() const { return _size; }

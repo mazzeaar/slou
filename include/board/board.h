@@ -7,6 +7,7 @@
 #include "definitions.h"
 #include "bitboard.h"
 #include "move.h"
+#include "config.h"
 
 struct MoveState {
     uint64_t ep_field_before = 0ULL;
@@ -44,8 +45,9 @@ class Board {
     std::stack<MoveState> move_history;
 
 public:
+    Board() : Board(STARTPOS) { }
+    Board(const std::string& fen);
 
-    Board(const std::string& fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     std::string getFen() const;
 
     inline uint64_t getZobristKey() const { return zobrist_hash; }

@@ -138,10 +138,10 @@ inline int getPiecePositionScore(const Board& board)
 
     int result = 0;
     uint64_t pieces = board.getPieces<type, color>();
-    while ( pieces ) {
+    BIT_LOOP(pieces)
+    {
         const int square = get_LSB(pieces);
         result += score_table[square];
-        pieces &= pieces - 1;  // Clear the LSB
     }
 
     return utils::isWhite(color) ? result : -result;
