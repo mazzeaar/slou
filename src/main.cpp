@@ -1,4 +1,3 @@
-#include "eval.h"
 #include <iostream>
 #include <chrono>
 #include <iomanip>
@@ -10,6 +9,7 @@
 #include "move_generator/move_generation.h"
 #include "game.h"
 #include "config.h"
+#include "eval.h"
 
 void perft_test(const std::vector<std::string>& args);
 void detailed_perft_test(const std::vector<std::string>& args);
