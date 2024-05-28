@@ -49,6 +49,7 @@ public:
     Board(const std::string& fen);
 
     std::string getFen() const;
+
     inline uint64_t getZobristKey() const { return zobrist_hash; }
     inline bool whiteTurn() const { return utils::isWhite(cur_color); }
 
@@ -297,28 +298,17 @@ public:
         removeCastleQs<color>();
     }
 
-    template <Color color>
-    inline void remove_piece(Piece piece, int square);
-
-    template <Color color>
-    inline void place_piece(Piece piece, int square);
-
-    template <Color color>
-    inline void move_piece(Piece piece, int from, int to);
+    template <Color color> constexpr void removePiece(Piece piece, uint64_t square);
+    template <Color color> constexpr void placePiece(Piece piece, uint64_t square);
+    template <Color color> constexpr void movePiece(Piece piece, uint64_t from, uint64_t to);
 
     // IMPORTANT! from & to are assumed to be the index of the piece, not the bitboard with the bit already set!
-    template <PieceType type, Color color>
-    constexpr void movePiece(uint64_t from, uint64_t to);
-
-    // IMPORTANT! square is assumed to be the index of the piece, not the bitboard with the bit already set!
-    template <PieceType type, Color color>
-    constexpr void removePiece(uint64_t square);
-
-    // IMPORTANT! square is assumed to be the index of the piece, not the bitboard with the bit already set!
-    template <PieceType type, Color color>
-    constexpr void placePiece(uint64_t square);
+    template <PieceType type, Color color> constexpr void movePiece(uint64_t from, uint64_t to);
+    template <PieceType type, Color color> constexpr void removePiece(uint64_t square);
+    template <PieceType type, Color color> constexpr void placePiece(uint64_t square);
 
     std::string toString() const;
+
 private:
 
     void storeState(const Move& move);

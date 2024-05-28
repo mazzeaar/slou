@@ -4,7 +4,7 @@
 #include "../zobrist.h"
 
 template <PieceType type, Color color>
-constexpr inline int Board::getIndex()
+constexpr int Board::getIndex()
 {
     if constexpr ( type == PieceType::none ) {
         if constexpr ( color == Color::none ) {
@@ -24,13 +24,13 @@ constexpr inline int Board::getIndex()
 }
 
 template <Piece piece>
-constexpr inline int Board::getIndex()
+constexpr int Board::getIndex()
 {
     return getIndex<utils::getPieceType(piece), utils::getColor(piece)>();
 }
 
 template <PieceType type, Color color>
-constexpr inline uint64_t Board::getPieces() const
+constexpr uint64_t Board::getPieces() const
 {
     constexpr int index = getIndex<type, color>();
     if constexpr ( index == 14 ) {
@@ -42,7 +42,7 @@ constexpr inline uint64_t Board::getPieces() const
 }
 
 template <Piece piece>
-constexpr inline uint64_t Board::getPieces() const
+constexpr uint64_t Board::getPieces() const
 {
     return getPieces<utils::getPieceType(piece), utils::getColor(piece)>();
 }
@@ -53,7 +53,7 @@ constexpr inline uint64_t Board::getPieces() const
 
 // IMPORTANT! from & to are assumed to be the index of the piece, not the bitboard with the bit already set!
 template <PieceType type, Color color>
-constexpr inline void Board::movePiece(uint64_t from, uint64_t to)
+constexpr void Board::movePiece(uint64_t from, uint64_t to)
 {
     constexpr Piece piece = utils::getPiece(type, color);
     constexpr int occupancy_index = getIndex<PieceType::none, color>();
@@ -77,7 +77,7 @@ constexpr inline void Board::movePiece(uint64_t from, uint64_t to)
 
 // IMPORTANT! square is assumed to be the index of the piece, not the bitboard with the bit already set!
 template <PieceType type, Color color>
-constexpr inline void Board::removePiece(uint64_t square)
+constexpr void Board::removePiece(uint64_t square)
 {
     constexpr int piece_index = getIndex<type, color>();
     constexpr int occ_index = getIndex<PieceType::none, color>();
@@ -93,7 +93,7 @@ constexpr inline void Board::removePiece(uint64_t square)
 
 // IMPORTANT! square is assumed to be the index of the piece, not the bitboard with the bit already set!
 template <PieceType type, Color color>
-constexpr inline void Board::placePiece(uint64_t square)
+constexpr void Board::placePiece(uint64_t square)
 {
     constexpr Piece piece = utils::getPiece(type, color);
     constexpr int occupancy_index = getIndex<PieceType::none, color>();
@@ -109,7 +109,7 @@ constexpr inline void Board::placePiece(uint64_t square)
 }
 
 template <Color color>
-inline void Board::remove_piece(Piece piece, int square)
+constexpr void Board::removePiece(Piece piece, uint64_t square)
 {
     constexpr int occupancy_index = getIndex<PieceType::none, color>();
     const int piece_index = getIndex(piece);
@@ -124,7 +124,7 @@ inline void Board::remove_piece(Piece piece, int square)
 }
 
 template <Color color>
-inline void Board::place_piece(Piece piece, int square)
+constexpr void Board::placePiece(Piece piece, uint64_t square)
 {
     constexpr int occupancy_index = getIndex<PieceType::none, color>();
     const int piece_index = getIndex(piece);
@@ -139,7 +139,7 @@ inline void Board::place_piece(Piece piece, int square)
 }
 
 template <Color color>
-inline void Board::move_piece(Piece piece, int from, int to)
+constexpr void Board::movePiece(Piece piece, uint64_t from, uint64_t to)
 {
     constexpr int occupancy_index = getIndex<PieceType::none, color>();
     const int piece_index = getIndex(piece);
@@ -199,62 +199,35 @@ inline void Board::tryToRemoveCastlingRights(const Move& move)
         if ( to == enemy_rook_k ) {
             removeCastleKs<enemy_color>();
 
-            if ( utils::isWhite(my_color) ) {
-                Zobrist::toggleCastlingKW(zobrist_hash);
-            }
-            else {
-                Zobrist::toggleCastlingKB(zobrist_hash);
-            }
+            Zobrist::toggleCastlingKs<enemy_color>(zobrist_hash);
         }
         else if ( to == enemy_rook_q ) {
             removeCastleQs<enemy_color>();
 
-            if ( utils::isWhite(my_color) ) {
-                Zobrist::toggleCastlingQW(zobrist_hash);
-            }
-            else {
-                Zobrist::toggleCastlingQB(zobrist_hash);
-            }
+            Zobrist::toggleCastlingQs<enemy_color>(zobrist_hash);
         }
     }
 
     if ( from == my_rook_k ) {
         removeCastleKs<my_color>();
 
-        if ( utils::isWhite(my_color) ) {
-            Zobrist::toggleCastlingKW(zobrist_hash);
-        }
-        else {
-            Zobrist::toggleCastlingKB(zobrist_hash);
-        }
+        Zobrist::toggleCastlingKs<my_color>(zobrist_hash);
     }
     else if ( from == my_rook_q ) {
         removeCastleQs<my_color>();
 
-        if ( utils::isWhite(my_color) ) {
-            Zobrist::toggleCastlingQW(zobrist_hash);
-        }
-        else {
-            Zobrist::toggleCastlingQB(zobrist_hash);
-        }
+        Zobrist::toggleCastlingQs<my_color>(zobrist_hash);
     }
     else if ( moving_piece == king ) {
         removeCastle<my_color>();
 
-        if ( utils::isWhite(my_color) ) {
-            Zobrist::toggleCastlingW(zobrist_hash);
-        }
-        else {
-            Zobrist::toggleCastlingB(zobrist_hash);
-        }
-
+        Zobrist::toggleCastling<my_color>(zobrist_hash);
     }
 }
 
 // ================================
 // make move / unmake move
 // ================================
-
 template <Color color>
 void Board::move(const Move& move)
 {
@@ -276,79 +249,71 @@ void Board::move(const Move& move)
     Zobrist::toggleBlackToMove(zobrist_hash);
     Zobrist::toggleEnPassant(zobrist_hash, ep_field);
 
-    move_piece<color>(moving_piece, move_from, move_to);
-    switch ( move_flag ) {
-        case Move::Flag::quiet: {
-            tryToRemoveCastlingRights<my_color, false>(move);
-        } break;
-        case Move::Flag::pawn_push: {
-            const uint64_t new_ep_field = pawn_push_function(1ULL << move_from);
-            ep_field = new_ep_field;
+    if ( move_flag == Move::Flag::pawn_push ) {
+        movePiece<PieceType::pawn, my_color>(move_from, move_to);
+        const uint64_t new_ep_field = pawn_push_function(1ULL << move_from);
+        ep_field = new_ep_field;
 
-            cur_color = enemy_color;
+        cur_color = enemy_color;
 
-            return; // early exit because we set the ep field
-        } break;
-        case Move::Flag::castle_k: {
-            constexpr int rook_from = (utils::isWhite(my_color) ? 7 : 63);
-            constexpr int rook_to = (utils::isWhite(my_color) ? 5 : 61);
+        return; // early exit because we set the ep field
+    }
 
-            movePiece<PieceType::rook, my_color>(rook_from, rook_to);
-            removeCastle<my_color>();
+    else if ( move_flag == Move::Flag::quiet ) {
+        movePiece<my_color>(moving_piece, move_from, move_to);
+        tryToRemoveCastlingRights<my_color, false>(move);
+    }
 
-            if ( utils::isWhite(my_color) ) {
-                Zobrist::toggleCastlingW(zobrist_hash);
-            }
-            else {
-                Zobrist::toggleCastlingB(zobrist_hash);
-            }
+    else if ( move_flag == Move::Flag::castle_k ) {
+        constexpr int rook_from = (utils::isWhite(my_color) ? 7 : 63);
+        constexpr int rook_to = (utils::isWhite(my_color) ? 5 : 61);
 
-        } break;
-        case Move::Flag::castle_q: {
-            constexpr int rook_from = (utils::isWhite(my_color) ? 0 : 56);
-            constexpr int rook_to = (utils::isWhite(my_color) ? 3 : 59);
+        movePiece<PieceType::king, my_color>(move_from, move_to);
+        movePiece<PieceType::rook, my_color>(rook_from, rook_to);
 
-            movePiece<PieceType::rook, my_color>(rook_from, rook_to);
-            removeCastle<my_color>();
+        removeCastle<my_color>();
 
-            if ( utils::isWhite(my_color) ) {
-                Zobrist::toggleCastlingW(zobrist_hash);
-            }
-            else {
-                Zobrist::toggleCastlingB(zobrist_hash);
-            }
-        } break;
-        case Move::Flag::capture: {
-            remove_piece<enemy_color>(captured_piece, move_to);
-            mailbox[move_to] = moving_piece;
+        Zobrist::toggleCastlingKs<my_color>(zobrist_hash);
+    }
 
+    else if ( move_flag == Move::Flag::castle_q ) {
+        constexpr int rook_from = (utils::isWhite(my_color) ? 0 : 56);
+        constexpr int rook_to = (utils::isWhite(my_color) ? 3 : 59);
+
+        movePiece<PieceType::king, my_color>(move_from, move_to);
+        movePiece<PieceType::rook, my_color>(rook_from, rook_to);
+
+        removeCastle<my_color>();
+
+        Zobrist::toggleCastlingQs<my_color>(zobrist_hash);
+    }
+
+    else if ( move_flag == Move::Flag::capture ) {
+        movePiece<color>(moving_piece, move_from, move_to);
+        removePiece<enemy_color>(captured_piece, move_to);
+        mailbox[move_to] = moving_piece;
+
+        tryToRemoveCastlingRights<my_color, true>(move);
+    }
+
+    else if ( move_flag == Move::Flag::ep ) {
+        constexpr int offset = (utils::isWhite(my_color) ? -8 : 8);
+        const uint64_t enemy_square = move_to + offset;
+        movePiece<PieceType::pawn, my_color>(move_from, move_to);
+        removePiece<PieceType::pawn, enemy_color>(enemy_square);
+    }
+
+    else if ( move_flag == Move::Flag::promo_n || move_flag == Move::Flag::promo_b || move_flag == Move::Flag::promo_r || move_flag == Move::Flag::promo_q || move_flag == Move::Flag::promo_x_n || move_flag == Move::Flag::promo_x_b || move_flag == Move::Flag::promo_x_r || move_flag == Move::Flag::promo_x_q ) {
+        state.promotion_piece = utils::getPiece(move.getPromotionPieceType(), my_color);
+        move_history.top().promotion_piece = state.promotion_piece;
+
+        if ( move.isCapture() ) {
+            removePiece<enemy_color>(captured_piece, move_to);
             tryToRemoveCastlingRights<my_color, true>(move);
-        } break;
-        case Move::Flag::ep: {
-            constexpr int offset = (utils::isWhite(my_color) ? -8 : 8);
-            const uint64_t enemy_square = move_to + offset;
-            removePiece<PieceType::pawn, enemy_color>(enemy_square);
-        } break;
-        case Move::Flag::promo_n:
-        case Move::Flag::promo_b:
-        case Move::Flag::promo_r:
-        case Move::Flag::promo_q:
-        case Move::Flag::promo_x_n:
-        case Move::Flag::promo_x_b:
-        case Move::Flag::promo_x_r:
-        case Move::Flag::promo_x_q: {
-            state.promotion_piece = utils::getPiece(move.getPromotionPieceType(), my_color);
-            move_history.top().promotion_piece = state.promotion_piece;
+        }
 
-            if ( move.isCapture() ) {
-                remove_piece<enemy_color>(captured_piece, move_to);
-                tryToRemoveCastlingRights<my_color, true>(move);
-            }
-
-            removePiece<PieceType::pawn, my_color>(move_to);
-            place_piece<my_color>(state.promotion_piece, move_to);
-        } break;
-        default: break;
+        removePiece<PieceType::pawn, my_color>(move_from);
+        placePiece<my_color>(state.promotion_piece, move_to);
     }
 
     ep_field = 0ULL;
@@ -390,7 +355,7 @@ void Board::undo(const Move& move)
         case Move::Flag::castle_q:
         case Move::Flag::capture:
         case Move::Flag::ep: {
-            move_piece<my_color>(moving_piece, move_to, move_from);
+            movePiece<my_color>(moving_piece, move_to, move_from);
         } break;
         default: break;
     }
@@ -416,15 +381,15 @@ void Board::undo(const Move& move)
         placePiece<PieceType::pawn, enemy_color>(move_to + ep_offset);
     }
     else if ( move.isPromotion() ) {
-        remove_piece<my_color>(promotion_piece, move_to);
+        removePiece<my_color>(promotion_piece, move_to);
         placePiece<PieceType::pawn, my_color>(move_from);
 
         if ( move.isCapture() ) {
-            place_piece<enemy_color>(captured_piece, move_to);
+            placePiece<enemy_color>(captured_piece, move_to);
         }
     }
     else if ( move.isCapture() ) {
-        place_piece<enemy_color>(captured_piece, move_to);
+        placePiece<enemy_color>(captured_piece, move_to);
     }
 
     zobrist_hash = last_state.hash;

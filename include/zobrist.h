@@ -1,8 +1,11 @@
 #pragma once
+
 #include <array>
 #include <cstdint>
 #include <unordered_map>
 #include <random>
+
+#include "definitions.h"
 
 class Board; // fwd declaration
 
@@ -22,12 +25,42 @@ namespace Zobrist {
     uint64_t computeHash(const Board& board);
 
     inline void togglePiece(uint64_t& hash, int piece_id, int square) { hash ^= pieceKeys[piece_id][square]; }
-    inline void toggleCastlingW(uint64_t& hash) { hash ^= castlingKeys[0]; hash ^= castlingKeys[1]; }
-    inline void toggleCastlingB(uint64_t& hash) { hash ^= castlingKeys[2]; hash ^= castlingKeys[3]; }
-    inline void toggleCastlingKW(uint64_t& hash) { hash ^= castlingKeys[0]; }
-    inline void toggleCastlingQW(uint64_t& hash) { hash ^= castlingKeys[1]; }
-    inline void toggleCastlingKB(uint64_t& hash) { hash ^= castlingKeys[2]; }
-    inline void toggleCastlingQB(uint64_t& hash) { hash ^= castlingKeys[3]; }
+
+    template <Color color>
+    constexpr void toggleCastling(uint64_t& hash)
+    {
+        if constexpr ( utils::isWhite(color) ) {
+            hash ^= castlingKeys[0];
+            hash ^= castlingKeys[1];
+        }
+        else {
+            hash ^= castlingKeys[2];
+            hash ^= castlingKeys[3];
+        }
+    }
+
+    template <Color color>
+    constexpr void toggleCastlingQs(uint64_t& hash)
+    {
+        if constexpr ( utils::isWhite(color) ) {
+            hash ^= castlingKeys[1];
+        }
+        else {
+            hash ^= castlingKeys[3];
+        }
+    }
+
+    template <Color color>
+    constexpr void toggleCastlingKs(uint64_t& hash)
+    {
+        if constexpr ( utils::isWhite(color) ) {
+            hash ^= castlingKeys[0];
+        }
+        else {
+            hash ^= castlingKeys[2];
+        }
+    }
+
     inline void toggleEnPassant(uint64_t& hash, uint64_t ep_field) { hash ^= enPassantKeys[get_LSB(ep_field)]; }
     inline void toggleBlackToMove(uint64_t& hash) { hash ^= blackToMove; }
 };
