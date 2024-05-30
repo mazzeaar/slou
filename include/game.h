@@ -17,6 +17,7 @@ private:
     Board board;
     TTable<TTEntry_perft, TTABLE_SIZE_MB> tt_perft;
     TTable<TTEntry_eval, TTABLE_SIZE_MB> tt_eval;
+
 public:
     Game()
     {

@@ -4,9 +4,9 @@
 
 Board::Board(const std::string& fen)
 {
-    ep_field = 0ULL;
+    state = new State();
 
-    std::fill(mailbox.begin(), mailbox.end(), Piece::none);
+    state->ep_field = 0ULL;
 
     std::string board_fen = fen.substr(0, fen.find_first_of(' '));
     unsigned index = 0;
@@ -42,7 +42,7 @@ Board::Board(const std::string& fen)
                 placePiece<Color::black>(piece, square);
             }
 
-            mailbox[square] = piece;
+            state->mailbox[square] = piece;
 
             file++;
             index++;
@@ -57,10 +57,10 @@ Board::Board(const std::string& fen)
         switch ( part ) {
             case 0: { // active color
                 if ( token == "w" ) {
-                    cur_color = Color::white;
+                    state->cur_color = Color::white;
                 }
                 else if ( token == "b" ) {
-                    cur_color = Color::black;
+                    state->cur_color = Color::black;
                 }
                 else {
                     assert(false && "COLOR NOT ALLOWED");
@@ -68,26 +68,26 @@ Board::Board(const std::string& fen)
             } break;
             case 1: { // castling rights
                 if ( token == "-" ) {
-                    castling_rights.raw = 0x00;
+                    state->castling_rights.raw = 0x00;
                     break;
                 }
 
                 if ( token.find('K') == std::string::npos )
-                    castling_rights.white_ks = 0;
+                    state->castling_rights.white_ks = 0;
                 if ( token.find('Q') == std::string::npos )
-                    castling_rights.white_qs = 0;
+                    state->castling_rights.white_qs = 0;
                 if ( token.find('k') == std::string::npos )
-                    castling_rights.black_ks = 0;
+                    state->castling_rights.black_ks = 0;
                 if ( token.find('q') == std::string::npos )
-                    castling_rights.black_qs = 0;
+                    state->castling_rights.black_qs = 0;
             } break;
             case 2: { // ep target
                 if ( token != "-" ) {
                     int square = utils::coordinateToIndex(token);
-                    ep_field = single_bit_u64(square);
+                    state->ep_field = single_bit_u64(square);
                 }
                 else {
-                    ep_field = 0ULL;
+                    state->ep_field = 0ULL;
                 }
 
             } break;
@@ -102,7 +102,7 @@ Board::Board(const std::string& fen)
         ++part;
     }
 
-    zobrist_hash = Zobrist::computeHash(*this);
+    state->zobrist_hash = Zobrist::computeHash(*this);
 }
 
 std::string Board::getFen() const
@@ -112,7 +112,7 @@ std::string Board::getFen() const
     for ( int j = 7; j >= 0; --j ) {
         int counter = 0;
         for ( unsigned i = 0; i < 8; ) {
-            while ( mailbox[(j * 8) + i] == Piece::none && i < 8 ) {
+            while ( state->mailbox[(j * 8) + i] == Piece::none && i < 8 ) {
                 ++counter;
                 ++i;
             }
@@ -122,7 +122,7 @@ std::string Board::getFen() const
                 counter = 0;
             }
             else {
-                res += utils::PieceToChar(mailbox[(j * 8) + i]);
+                res += utils::PieceToChar(state->mailbox[(j * 8) + i]);
                 ++i;
             }
         }
@@ -153,39 +153,18 @@ std::string Board::getFen() const
         res += castling + " ";
     }
 
-    if ( ep_field == 0ULL ) {
+    if ( state->ep_field == 0ULL ) {
         res += "- ";
     }
     else {
-        res += utils::square_to_coordinates[(get_LSB(ep_field))];
+        res += utils::square_to_coordinates[(get_LSB(state->ep_field))];
         res += " ";
     }
 
-    res += std::to_string(half_move_clock) + " ";
-    res += std::to_string(full_move_clock);
+    res += std::to_string(state->half_move_clock) + " ";
+    res += std::to_string(state->full_move_clock);
 
     return res;
-}
-
-void Board::storeState(const Move& move)
-{
-    MoveState state;
-
-    const uint64_t from = move.getFrom();
-    const uint64_t to = move.getTo();
-    const bool is_capture = move.isCapture();
-
-    state.moving_piece = getPiece(from);
-
-    if ( is_capture ) {
-        state.captured_piece = getPiece(to);
-    }
-
-    state.ep_field_before = getEpField();
-    state.castling_rights = castling_rights.raw;
-    state.hash = zobrist_hash;
-
-    move_history.push(state);
 }
 
 std::string Board::toString() const
@@ -200,7 +179,7 @@ std::string Board::toString() const
         const unsigned row_begin = (rank - 1) * 8;
         for ( unsigned square = row_begin; square < row_begin + 8; ++square ) {
             str += ' ';
-            str += utils::PieceToChar(mailbox[square]);;
+            str += utils::PieceToChar(state->mailbox[square]);;
             str += " " + VERTICAL_BORDER;
         }
 

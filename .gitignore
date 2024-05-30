@@ -9,6 +9,7 @@ lib/
 src/magic/meta_magic.cpp
 src/magic/rook_magics.cpp
 src/magic/bishop_magics.cpp
+tournament.sh
 
 # Generated documentation #
 doxygen/html

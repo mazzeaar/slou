@@ -76,7 +76,10 @@ public:
     constexpr bool isRookPromo() const { return getFlag() == Flag::promo_r || getFlag() == Flag::promo_x_r; }
     constexpr bool isQueenPromo() const { return getFlag() == Flag::promo_q || getFlag() == Flag::promo_x_q; }
 
+    template <Color color>
+    constexpr Piece getPromotionPiece() const;
     constexpr PieceType getPromotionPieceType() const;
+
     inline std::string toLongAlgebraic() const;
 
 private:
@@ -101,6 +104,28 @@ constexpr PieceType Move::getPromotionPieceType() const
             return PieceType::queen;
         default:
             return PieceType::none;
+    }
+}
+
+template <Color color>
+constexpr Piece Move::getPromotionPiece() const
+{
+    const Flag flag = getFlag();
+    switch ( flag ) {
+        case Flag::promo_n:
+        case Flag::promo_x_n:
+            return utils::getPiece(PieceType::knight, color);
+        case Flag::promo_b:
+        case Flag::promo_x_b:
+            return utils::getPiece(PieceType::bishop, color);
+        case Flag::promo_r:
+        case Flag::promo_x_r:
+            return utils::getPiece(PieceType::rook, color);
+        case Flag::promo_q:
+        case Flag::promo_x_q:
+            return utils::getPiece(PieceType::queen, color);
+        default:
+            return Piece::none;
     }
 }
 

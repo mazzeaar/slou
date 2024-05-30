@@ -9,25 +9,14 @@
 #include "move.h"
 #include "config.h"
 
-struct MoveState {
-    uint64_t ep_field_before = 0ULL;
-    char castling_rights = 0x00;
-    uint64_t hash;
-    Piece moving_piece = Piece::none;
-    Piece captured_piece = Piece::none;
-    Piece promotion_piece = Piece::none;
-
-    MoveState() = default;
-};
-
-class Board {
-    Color cur_color = Color::white;
-    std::array<uint64_t, 6 + 6 + 2> pieces = { 0ULL };
-    uint64_t ep_field = 0ULL;
+struct State {
+    Color cur_color;
 
     uint64_t zobrist_hash;
 
+    std::array<uint64_t, 14> pieces = { 0ULL };
     std::array<Piece, 64> mailbox { Piece::none };
+    uint64_t ep_field;
 
     union {
         struct {
@@ -39,19 +28,32 @@ class Board {
         char raw = 0xFF;
     } castling_rights;
 
-    int half_move_clock = 0;
-    int full_move_clock = 1;
+    int half_move_clock;
+    int full_move_clock;
+};
 
+struct MoveState {
+    uint64_t ep_field = 0ULL;
+    char castling_rights = 0x00;
+    uint64_t zobrist_hash;
+    Piece moving_piece = Piece::none;
+    Piece captured_piece = Piece::none;
+    Piece promotion_piece = Piece::none;
+
+    MoveState() = default;
+};
+
+class Board {
+    State* state;
     std::stack<MoveState> move_history;
-
 public:
     Board() : Board(STARTPOS) { }
     Board(const std::string& fen);
 
     std::string getFen() const;
 
-    inline uint64_t getZobristKey() const { return zobrist_hash; }
-    inline bool whiteTurn() const { return utils::isWhite(cur_color); }
+    inline uint64_t getZobristKey() const { return state->zobrist_hash; }
+    inline bool whiteTurn() const { return utils::isWhite(state->cur_color); }
 
     template <Color color> void move(const Move& move);
     template <Color color> void undo(const Move& move);
@@ -59,7 +61,7 @@ public:
     template <Color color>
     constexpr bool isCheck(uint64_t enemy_attacks) const { return (enemy_attacks & getPieces<PieceType::king, color>()) != NULL_BB; }
 
-    char getRawCastlingRights() const { return castling_rights.raw; }
+    char getRawCastlingRights() const { return state->castling_rights.raw; }
 
     /**
      * @brief Get the index of the piece board
@@ -106,7 +108,7 @@ public:
      */
     constexpr Piece getPiece(int square) const
     {
-        return mailbox[square];
+        return state->mailbox[square];
     }
 
     /**
@@ -142,7 +144,7 @@ public:
      */
     constexpr uint64_t getEpField() const
     {
-        return ep_field;
+        return state->ep_field;
     }
 
     /**
@@ -172,7 +174,7 @@ public:
      */
     constexpr uint64_t getOccupancy() const
     {
-        return pieces[12] | pieces[13];
+        return state->pieces[12] | state->pieces[13];
     }
 
     /**
@@ -186,7 +188,7 @@ public:
     {
         constexpr Color enemy_color = utils::switchColor(color);
         constexpr int enemy_idx = getIndex<PieceType::none, enemy_color>();
-        return pieces[enemy_idx];
+        return state->pieces[enemy_idx];
     }
 
     /**
@@ -223,8 +225,8 @@ public:
     template <Color color>
     constexpr bool canCastleQs() const
     {
-        if constexpr ( utils::isWhite(color) ) return castling_rights.white_qs != 0;
-        else return castling_rights.black_qs != 0;
+        if constexpr ( utils::isWhite(color) ) return state->castling_rights.white_qs != 0;
+        else return state->castling_rights.black_qs != 0;
     }
 
     /**
@@ -237,8 +239,8 @@ public:
     template <Color color>
     constexpr bool canCastleKs() const
     {
-        if constexpr ( utils::isWhite(color) ) return castling_rights.white_ks != 0;
-        else return castling_rights.black_ks != 0;
+        if constexpr ( utils::isWhite(color) ) return state->castling_rights.white_ks != 0;
+        else return state->castling_rights.black_ks != 0;
     }
 
     /**
@@ -280,15 +282,15 @@ public:
     template <Color color>
     constexpr void removeCastleKs()
     {
-        if constexpr ( utils::isWhite(color) ) castling_rights.white_ks = 0;
-        else castling_rights.black_ks = 0;
+        if constexpr ( utils::isWhite(color) ) state->castling_rights.white_ks = 0;
+        else state->castling_rights.black_ks = 0;
     }
 
     template <Color color>
     constexpr void removeCastleQs()
     {
-        if constexpr ( utils::isWhite(color) ) castling_rights.white_qs = 0;
-        else castling_rights.black_qs = 0;
+        if constexpr ( utils::isWhite(color) ) state->castling_rights.white_qs = 0;
+        else state->castling_rights.black_qs = 0;
     }
 
     template <Color color>
@@ -311,10 +313,10 @@ public:
 
 private:
 
+    template <Color color>
     void storeState(const Move& move);
-    void restoreState();
 
-    constexpr void switchColor() { cur_color = utils::switchColor(cur_color); }
+    constexpr void switchColor() { state->cur_color = utils::switchColor(state->cur_color); }
 
     template <Color color, bool is_capture>
     inline void tryToRemoveCastlingRights(const Move& move);

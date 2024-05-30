@@ -113,7 +113,7 @@ const std::array<int, 64> getPositionBoard()
 }
 
 template <PieceType type>
-inline int get_piece_score(const Board& board, int value)
+inline int getPieceScore(const Board& board, int value)
 {
     const uint64_t white_pieces = board.getPieces<type, Color::white>();
     const uint64_t black_pieces = board.getPieces<type, Color::black>();
@@ -122,13 +122,38 @@ inline int get_piece_score(const Board& board, int value)
 
 inline int getMaterialScore(const Board& board)
 {
-    const int pawn_score = get_piece_score<PieceType::pawn>(board, 100);
-    const int knight_score = get_piece_score<PieceType::knight>(board, 320);
-    const int bishop_score = get_piece_score<PieceType::bishop>(board, 320);
-    const int rook_score = get_piece_score<PieceType::rook>(board, 500);
-    const int queen_score = get_piece_score<PieceType::queen>(board, 900);
+    const int pawn_score = getPieceScore<PieceType::pawn>(board, 100);
+    const int knight_score = getPieceScore<PieceType::knight>(board, 320);
+    const int bishop_score = getPieceScore<PieceType::bishop>(board, 320);
+    const int rook_score = getPieceScore<PieceType::rook>(board, 500);
+    const int queen_score = getPieceScore<PieceType::queen>(board, 900);
+    const int king_score = getPieceScore<PieceType::king>(board, 10000);
 
-    return pawn_score + knight_score + bishop_score + rook_score + queen_score;
+    return pawn_score + knight_score + bishop_score + rook_score + queen_score + king_score;
+}
+
+inline int getPawnScore(const Board& board)
+{
+    const uint64_t white_pawns = board.getPieces<PieceType::pawn, Color::white>();
+    const uint64_t black_pawns = board.getPieces<PieceType::pawn, Color::black>();
+
+    int double_pawns = 0;
+    for ( uint64_t i = 0; i < 8; ++i ) {
+        const uint64_t file_mask = (FILE_A << i);
+
+        int w_pawns_in_file = get_bit_count(white_pawns & file_mask);
+        int b_pawns_in_file = get_bit_count(black_pawns & file_mask);
+
+        if ( w_pawns_in_file > 1 ) {
+            double_pawns += w_pawns_in_file;
+        }
+
+        if ( b_pawns_in_file > 1 ) {
+            double_pawns -= b_pawns_in_file;
+        }
+    }
+
+    return -double_pawns;
 }
 
 template <PieceType type, Color color>
@@ -151,6 +176,7 @@ template <Color color>
 inline int getPositionalScore(const Board& board)
 {
     int result = 0;
+
     result += getPiecePositionScore<PieceType::pawn, color>(board);
     result += getPiecePositionScore<PieceType::knight, color>(board);
     result += getPiecePositionScore<PieceType::bishop, color>(board);
@@ -162,13 +188,18 @@ inline int getPositionalScore(const Board& board)
 }
 
 template <Color color>
-inline double evalPosition(const Board& board)
+inline double evalPosition(Board& board)
 {
-    constexpr int mult = (utils::isWhite(color) ? 1 : -1);
-
     const int material_score = getMaterialScore(board);
     const int position_score = getPositionalScore<color>(board);
+    const int pawn_scores = getPawnScore(board);
 
-    const double score = material_score + position_score;
-    return score * mult;
+    const double score = material_score + position_score + pawn_scores;
+
+    if constexpr ( utils::isWhite(color) ) {
+        return score;
+    }
+    else {
+        return -score;
+    }
 }

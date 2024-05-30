@@ -61,6 +61,30 @@ inline u64 pseudolegal_moves(MoveList& move_list, const Board& board)
 template <Color color>
 inline u64 generate_moves(MoveList& move_list, Board& board)
 {
+
+    /*
+    movegen now: 76.8366425006 ns / move
+
+    generate mask:
+        treat own king as enemy r&b
+        get attack mask for king and for enemy r&b and or them
+        now, if piece&mask!=0, then the piece is pinned.
+            -> pieces can still move inside of the pin sometimes
+
+    at beginning of movegen function:
+        get diag, horiz, or both masks (depending whats relevant)
+        get piece bb -> piecebb & mask = pieces to generate moves for (maybe filter again -> pawns and diagonal attacks (!!!!EP))
+
+    movegen functions are faster than make/unmake
+    at last profiling: movegen ~15ns/piecetype, make/unmake 26ns/move
+
+    so by having a checkmask we can always not generate illegal moves, which is obviously cheaper than generating them and checking for legality
+
+    we can then also generate a checkmask on the king
+        if doublecheck we can only generate for the king -> checkmate detector as well
+        if not we.. could maybe filter for possible blockers but idk how
+*/
+
     pseudolegal_moves<color>(move_list, board);
 
     for ( size_t i = 0; i < move_list.size(); ) {
